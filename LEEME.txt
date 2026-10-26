@@ -1,0 +1,58 @@
+CLAWNDARIO · tareas, calendario y recordatorios
+================================================
+
+EN INTERNET (escritorio y móvil)
+  https://danielopezblaz-prog.github.io/clawndario/
+  Ordenador: ábrela en Chrome o Edge y pulsa «Instalar» en la barra de direcciones (o menú ⋮ → Instalar Clawndario).
+             Queda como app con su ventana e icono; se puede anclar a la barra de tareas.
+  Android:   Chrome → menú ⋮ → «Añadir a pantalla de inicio» / «Instalar app».
+  iPhone:    Safari → Compartir → «Añadir a pantalla de inicio».
+  Cada dispositivo guarda sus propios datos (no se sincronizan entre sí). Para pasarlos de uno a otro:
+  Ajustes → Copia de seguridad (.json) en uno, y Ajustes → Restaurar copia en el otro.
+
+EN ESTE PC SIN INTERNET
+  Doble clic en Clawndario.lnk, o busca «Clawndario» en el menú Inicio (botón derecho → anclar a la barra de tareas).
+  Abre la copia local en una ventana propia de Chrome. Si mueves la carpeta, vuelve a ejecutar instalar.ps1
+  (botón derecho → Ejecutar con PowerShell).
+
+AVISOS DE REUNIONES Y TAREAS
+  La primera vez pulsa la campana (en el ordenador, abajo a la izquierda; en el móvil, Más → Ajustes) y acepta las notificaciones.
+  Mientras la app esté abierta (aunque esté minimizada o detrás) avisa con una notificación del sistema,
+  un sonido y una tarjeta con «Ver · 5 min · 15 min · Hecho». Cerrada del todo no puede avisar.
+  Para que se abra sola al encender el PC: botón derecho en autoinicio.ps1 → Ejecutar con PowerShell (otra vez lo quita).
+
+AÑADIR RÁPIDO (cuadro de arriba, tecla N)
+  Escribe en lenguaje natural y pulsa Intro. Ejemplos:
+    Reunión con Dani mañana 10:30 #trabajo !alta
+    Llamar al banco el viernes a las 12
+    Visita a la obra el 3 de noviembre de 9 a 11 avisa 1 h antes
+    Pagar el seguro cada mes el 5 #personal
+    Revisar presupuestos cada lunes a las 9
+  Entiende: hoy · mañana · pasado mañana · lunes…domingo · 15/11 · 15 de noviembre · el 15
+            10:30 · a las 10 · de 10 a 11:30 · 10:00-11:30 · 1h / 30 min (duración)
+            #lista (Trabajo, Reuniones, Personal o las que crees)
+            !alta / !media / !baja
+            cada día / semana / mes / año / lunes… / laborables / dos semanas
+            avisa 15 min antes · avisa 1 h antes · avisa 1 día antes
+  Si pone «reunión», «cita», «llamada», «visita»… lo guarda como reunión (hora de fin y aviso 15 min antes).
+
+VISTAS
+  Hoy         saludo, anillo de progreso, vencidas / para hoy / semana / total, agenda por horas y tareas.
+  Próximos    los 30 días siguientes, día a día.
+  Calendario  mes o semana; arrastra una tarea a otro día para moverla; panel del día.
+  Todo pendiente / Completadas / Mis listas (color y nombre editables). En el móvil, todo desde la barra de abajo y «Más».
+  Cabecera: «Siguiente: …» con la cuenta atrás de la próxima reunión.
+
+ATAJOS (ordenador)
+  N añadir · Ctrl+K buscar · 1-5 cambiar de vista · Esc cerrar · Ctrl+Intro guardar la ficha.
+
+DATOS
+  Se guardan en el dispositivo, dentro del navegador (no en la nube). Ajustes → «Copia de seguridad (.json)»
+  para guardarla donde quieras y «Restaurar copia» para recuperarla. «Exportar .ics» mete todo en Outlook o Google Calendar.
+
+CÓDIGO
+  Repositorio: https://github.com/danielopezblaz-prog/clawndario (cada cambio subido a «main» se publica solo).
+  index.html, app.css, app.js       la aplicación
+  sw.js, manifest.webmanifest       funciona sin conexión e instalable (PWA)
+  instalar.ps1 / autoinicio.ps1     Windows: icono y accesos directos / abrir al iniciar sesión
+  serve.ps1                         solo para probarla con un servidor local
