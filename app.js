@@ -154,7 +154,7 @@ function rowHtml(o, opts) {
   return '<div class="row' + (o.isDone ? ' done' : '') + (o.type === 'event' ? ' event' : '') + (past ? ' past' : '') + '" data-id="' + o.id + '" data-occ="' + (o.occ || '') + '" draggable="true">' +
     '<button class="chk p' + (o.priority || 0) + '" data-act="toggle" title="Completar">' + ico('check') + '</button>' +
     '<div class="row-body" data-act="open"><div class="row-title">' + esc(o.title) + '</div><div class="row-meta">' + meta.join('<span>·</span>') + '</div></div>' +
-    '<div class="row-right">' + (o.priority ? '<svg class="flag p' + o.priority + '"><use href="#i-flag"/></svg>' : '') + '<button class="icon-btn sm del" data-act="del" title="Eliminar">' + ico('trash') + '</button></div></div>';
+    '<div class="row-right">' + (o.priority ? '<svg class="flag p' + o.priority + '"><use href="#i-flag"/></svg>' : '') + '<button class="icon-btn sm del" data-act="menu" title="Opciones">' + ico('more') + '</button></div></div>';
 }
 function timelineHtml(date) {
   const items = itemsOn(date).filter(o => o.time); const isToday = date === todayYmd();
@@ -170,7 +170,7 @@ function timelineHtml(date) {
       '<div class="time"><b>' + o.time + '</b>' + (o.end ? '<small>' + o.end + '</small>' : '') + '</div><div class="bar" style="background:' + l.color + '"></div>' +
       '<button class="chk p' + (o.priority || 0) + '" data-act="toggle" title="Completar">' + ico('check') + '</button>' +
       '<div class="row-body" data-act="open"><div class="row-title">' + esc(o.title) + '</div><div class="row-meta">' + [o.type === 'event' ? ico('users') + 'Reunión' : 'Tarea', esc(l.name), o.location ? ico('pin') + esc(o.location) : '', o.reminder != null ? ico('bell') + remLabel(o.reminder) : ''].filter(Boolean).join('<span>·</span>') + '</div></div>' +
-      '<div class="row-right"><button class="icon-btn sm del" data-act="del" title="Eliminar">' + ico('trash') + '</button></div></div>';
+      '<div class="row-right"><button class="icon-btn sm del" data-act="menu" title="Opciones">' + ico('more') + '</button></div></div>';
   }
   if (!nowDrawn) out += '<div class="nowline">' + hhmm + '</div>';
   return out + '</div>';
@@ -183,14 +183,20 @@ function viewToday() {
   const doneN = items.filter(o => o.isDone).length; const pct = items.length ? Math.round(doneN * 100 / items.length) : 0;
   const meetings = items.filter(o => o.type === 'event'); const tasks = items.filter(o => o.type === 'task');
   let week = 0; for (let i = 0; i < 7; i++) week += itemsOn(addDays(t, i)).filter(o => !o.isDone).length;
-  const sub = tasks.filter(o => !o.isDone).length + ' tareas pendientes · ' + meetings.length + (meetings.length === 1 ? ' reunión' : ' reuniones') + (od.length ? ' · <b style="color:var(--red)">' + od.length + ' vencidas</b>' : '');
-  let html = '<div class="hero"><div><div class="eyebrow">' + fmtLong(t) + '</div><h1>' + greet + name + '</h1><p class="sub">' + sub + '</p></div><div class="ring" style="--p:' + pct + '"><span>' + (items.length ? pct + '%' : '—') + '</span><small>hoy</small></div></div>';
-  html += '<div class="stats">' + stat('red', od.length, 'Vencidas', 'all') + stat('blue', items.filter(o => !o.isDone).length, 'Para hoy', 'today') + stat('purple', week, 'Esta semana', 'upcoming') + stat('green', pendingAll().length, 'Pendientes en total', 'all') + '</div>';
-  html += '<div class="grid2"><section class="card"><div class="card-head"><h2>Agenda de hoy <span class="n">' + items.filter(o => o.time).length + '</span></h2><button class="btn sm" data-act="new-event">' + ico('plus') + 'Reunión</button></div>' + timelineHtml(t) + '</section>';
-  html += '<section class="card"><div class="card-head"><h2>Tareas</h2><button class="btn sm" data-act="new-task">' + ico('plus') + 'Tarea</button></div>';
+  const sub = tasks.filter(o => !o.isDone).length + ' tareas pendientes · ' + meetings.length + (meetings.length === 1 ? ' reunión' : ' reuniones');
+  const kpi = (c, n, label, view, filter) => '<div class="kpi ' + c + '" data-act="go" data-view="' + view + '"' + (filter ? ' data-filter="' + filter + '"' : '') + '><b>' + n + '</b>' + label + '</div>';
+  let html = '<div class="hero"><div><div class="eyebrow">' + fmtLong(t) + '</div><h1>' + greet + name + '</h1><p class="sub">' + sub + '</p></div>' +
+    '<div class="kpis">' + kpi('red', od.length, 'vencidas', 'all', 'overdue') + kpi('blue', items.filter(o => !o.isDone).length, 'para hoy', 'today') + kpi('purple', week, 'esta semana', 'upcoming') + kpi('green', pendingAll().length, 'pendientes', 'all', 'all') + '</div>' +
+    '<div class="ring" style="--p:' + pct + '" title="Completado hoy"><span>' + (items.length ? pct + '%' : '—') + '</span><small>hoy</small></div></div>';
+  html += '<div class="grid3"><section class="card c1"><div class="card-head"><h2>Agenda de hoy <span class="n">' + items.filter(o => o.time).length + '</span></h2><button class="btn sm" data-act="new-event">' + ico('plus') + 'Reunión</button></div>' + timelineHtml(t) + '</section>';
+  html += '<section class="card c2"><div class="card-head"><h2>Tareas</h2><button class="btn sm" data-act="new-task">' + ico('plus') + 'Tarea</button></div>';
   if (od.length) html += '<div class="group-title red">Vencidas <span>' + od.length + '</span></div>' + od.map(o => rowHtml(o)).join('');
-  html += '<div class="group-title">Hoy <span>' + tasks.length + '</span></div>' + (tasks.length ? tasks.map(o => rowHtml(o, { noDate: true })).join('') : '<div class="empty">Sin tareas para hoy. Añade una arriba.</div>');
-  if (und.length) html += '<div class="group-title">Sin fecha <span>' + und.length + '</span></div>' + und.slice(0, 6).map(o => rowHtml(o)).join('') + (und.length > 6 ? '<button class="btn sm ghost" data-act="go" data-view="all" style="margin:6px">Ver todas</button>' : '');
+  html += '<div class="group-title">Hoy <span>' + tasks.length + '</span></div>' + (tasks.length ? tasks.map(o => rowHtml(o, { noDate: true })).join('') : '<div class="empty">Sin tareas para hoy</div>');
+  if (und.length) html += '<div class="group-title">Sin fecha <span>' + und.length + '</span></div>' + und.slice(0, 5).map(o => rowHtml(o)).join('') + (und.length > 5 ? '<button class="btn sm ghost" data-act="go" data-view="all" data-filter="undated">Ver las ' + und.length + '</button>' : '');
+  html += '</section><section class="card c3 upc"><div class="card-head"><h2>Próximos días</h2><button class="btn sm ghost" data-act="go" data-view="upcoming">Ver todo</button></div>';
+  let any = false;
+  for (let i = 1; i <= 7; i++) { const d = addDays(t, i); const its = itemsOn(d).filter(o => !o.isDone); if (!its.length) continue; any = true; html += '<div class="dh">' + relDay(d) + ' <span>' + fmtShort(d) + '</span></div>' + its.map(o => rowHtml(o, { noDate: true })).join(''); }
+  if (!any) html += '<div class="empty">Nada en los próximos 7 días</div>';
   return html + '</section></div>';
 }
 function viewUpcoming() {
@@ -268,27 +274,30 @@ function viewList() {
   if (done.length) html += '<div class="group-title">Completadas <button class="btn sm ghost" data-act="clear-done" data-list="' + l.id + '">Vaciar</button></div><div class="card" style="opacity:.85">' + done.slice(0, 20).map(it => rowHtml(occ(it, it.date))).join('') + '</div>';
   return html;
 }
+const FILTERS = [['all', 'Todo'], ['task', 'Tareas'], ['event', 'Reuniones'], ['prio', 'Importantes'], ['overdue', 'Vencidas'], ['undated', 'Sin fecha'], ['done', 'Completadas']];
 function viewAll() {
+  const t = todayYmd(); const f = FILTERS.some(x => x[0] === state.filter) ? state.filter : 'all';
+  const filters = '<div class="filters">' + FILTERS.map(x => '<span class="chip' + (f === x[0] ? ' on' : '') + '" data-act="filter" data-v="' + x[0] + '">' + x[1] + '</span>').join('') + '</div>';
+  if (f === 'done') {
+    const done = state.items.filter(it => !isRep(it) && it.done).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
+    const g = {}; done.forEach(it => { const k = it.doneAt ? ymd(new Date(it.doneAt)) : '0000'; (g[k] = g[k] || []).push(it); });
+    return '<div class="hero"><div><div class="eyebrow">Tareas y reuniones</div><h1>Completadas</h1><p class="sub">' + done.length + ' completadas</p></div>' + (done.length ? '<button class="btn danger sm" data-act="clear-done">' + ico('trash') + 'Vaciar completadas</button>' : '') + '</div>' + filters +
+      '<div class="card">' + (done.length ? Object.keys(g).sort().reverse().map(k => '<div class="group-title">' + (k === '0000' ? 'Antes' : relDay(k)) + '</div>' + g[k].map(it => rowHtml(occ(it, it.date))).join('')).join('') : '<div class="empty"><b>🧘</b>Aún no has completado nada</div>') + '</div>';
+  }
   let pend = pendingAll();
-  if (state.filter === 'task' || state.filter === 'event') pend = pend.filter(it => it.type === state.filter);
-  if (state.filter === 'prio') pend = pend.filter(it => it.priority >= 2);
-  if (state.filter === 'undated') pend = pend.filter(it => !it.date);
+  if (f === 'task' || f === 'event') pend = pend.filter(it => it.type === f);
+  if (f === 'prio') pend = pend.filter(it => it.priority >= 2);
+  if (f === 'undated') pend = pend.filter(it => !it.date);
+  if (f === 'overdue') pend = pend.filter(it => it.date && it.date < t && !isRep(it) && it.type === 'task');
   const rows = pend.map(it => occ(it, nextOcc(it))).sort(sortList);
-  const F = [['all', 'Todo'], ['task', 'Tareas'], ['event', 'Reuniones'], ['prio', 'Importantes'], ['undated', 'Sin fecha']];
-  let html = '<div class="hero"><div><div class="eyebrow">Pendiente</div><h1>Todo pendiente</h1><p class="sub">' + rows.length + ' elementos</p></div></div>';
-  html += '<div class="filters">' + F.map(f => '<span class="chip' + (state.filter === f[0] ? ' on' : '') + '" data-act="filter" data-v="' + f[0] + '">' + f[1] + '</span>').join('') + '</div>';
-  const t = todayYmd(); const g = { 'Vencidas': [], 'Hoy': [], 'Esta semana': [], 'Más adelante': [], 'Sin fecha': [] };
+  const title = FILTERS.find(x => x[0] === f)[1];
+  let html = '<div class="hero"><div><div class="eyebrow">Tareas y reuniones</div><h1>' + (f === 'all' ? 'Todo pendiente' : title) + '</h1><p class="sub">' + rows.length + ' elementos</p></div></div>' + filters;
+  const g = { 'Vencidas': [], 'Hoy': [], 'Esta semana': [], 'Más adelante': [], 'Sin fecha': [] };
   rows.forEach(o => { if (!o.occ) g['Sin fecha'].push(o); else if (o.occ < t) g['Vencidas'].push(o); else if (o.occ === t) g['Hoy'].push(o); else if (diffDays(t, o.occ) < 7) g['Esta semana'].push(o); else g['Más adelante'].push(o); });
   html += '<div class="card">' + Object.keys(g).filter(k => g[k].length).map(k => '<div class="group-title' + (k === 'Vencidas' ? ' red' : '') + '">' + k + ' <span>' + g[k].length + '</span></div>' + g[k].map(o => rowHtml(o)).join('')).join('') + (rows.length ? '' : '<div class="empty"><b>🎉</b>Nada pendiente</div>') + '</div>';
   return html;
 }
-function viewDone() {
-  const done = state.items.filter(it => !isRep(it) && it.done).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
-  let html = '<div class="hero"><div><div class="eyebrow">Historial</div><h1>Completadas</h1><p class="sub">' + done.length + ' completadas</p></div>' + (done.length ? '<button class="btn danger sm" data-act="clear-done">' + ico('trash') + 'Vaciar completadas</button>' : '') + '</div>';
-  const g = {}; done.forEach(it => { const k = it.doneAt ? ymd(new Date(it.doneAt)) : '0000'; (g[k] = g[k] || []).push(it); });
-  html += '<div class="card">' + (done.length ? Object.keys(g).sort().reverse().map(k => '<div class="group-title">' + (k === '0000' ? 'Antes' : relDay(k)) + '</div>' + g[k].map(it => rowHtml(occ(it, it.date))).join('')).join('') : '<div class="empty"><b>🧘</b>Aún no has completado nada</div>') + '</div>';
-  return html;
-}
+function viewDone() { state.filter = 'done'; return viewAll(); }
 function clearDone(listId) {
   const list = state.items.filter(it => !isRep(it) && it.done && (!listId || it.list === listId)); if (!list.length) return;
   if (!confirm('¿Eliminar ' + list.length + ' completadas definitivamente?')) return;
@@ -331,7 +340,37 @@ function render() {
   if (state.view === 'calendar' && state.calMode === 'week') { const w = $('#weekScroll'); if (w) w.scrollTop = 7.5 * HOUR; }
   renderSidebar();
 }
-function go(view, listId) { state.view = view; if (listId) state.listId = listId; render(); $('#view').scrollTop = 0; }
+function go(view, listId, filter) { if (view === 'done') { view = 'all'; filter = 'done'; } if (filter) state.filter = filter; state.view = view; if (listId) state.listId = listId; render(); $('#view').scrollTop = 0; }
+function applyDensity() { document.documentElement.dataset.density = state.settings.density === 'comoda' ? 'comoda' : 'compacta'; }
+
+/* ===== menú rápido ===== */
+let menuEl = null;
+function closeMenu() { if (menuEl) { menuEl.remove(); menuEl = null; } }
+function showMenu(x, y, items) {
+  closeMenu(); const m = document.createElement('div'); m.className = 'menu'; menuEl = m;
+  m.innerHTML = items.map(it => it === '-' ? '<hr>' : '<button class="' + (it.cls || '') + '" data-m="' + it.k + '">' + (it.icon ? ico(it.icon) : '') + it.label + '</button>').join('');
+  document.body.appendChild(m);
+  const r = m.getBoundingClientRect(); m.style.left = Math.max(6, Math.min(x, window.innerWidth - r.width - 8)) + 'px'; m.style.top = Math.max(6, Math.min(y, window.innerHeight - r.height - 8)) + 'px';
+  m.addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (!b) return; const it = items.find(i => i.k === b.dataset.m); closeMenu(); if (it && it.run) it.run(); });
+}
+function itemMenu(id, occD, x, y) {
+  const it = byId(id); if (!it) return; const t = todayYmd();
+  const setDate = d => { it.date = d; if (!d) { it.time = null; it.end = null; } it.updated = Date.now(); clearFired(it.id); save(); render(); toast(d ? 'Movido a ' + relDay(d) : 'Sin fecha', it.title, 'ok', 1500); };
+  const nextMon = () => { const d = fromYmd(t); d.setDate(d.getDate() + (((8 - d.getDay()) % 7) || 7)); return ymd(d); };
+  showMenu(x, y, [
+    { k: 'open', label: 'Abrir la ficha', icon: 'edit', run: () => openItem(id, occD) },
+    { k: 'done', label: isDone(it, occD || t) ? 'Marcar pendiente' : 'Marcar hecha', icon: 'check', run: () => toggleDone(id, occD || t) },
+    '-',
+    { k: 'today', label: 'Hoy', icon: 'sun', run: () => setDate(t) },
+    { k: 'tomorrow', label: 'Mañana', icon: 'next', run: () => setDate(addDays(t, 1)) },
+    { k: 'nextweek', label: 'Lunes que viene', icon: 'cal', run: () => setDate(nextMon()) },
+    { k: 'nodate', label: 'Quitar la fecha', icon: 'x', run: () => setDate(null) },
+    '-',
+    { k: 'prio', label: it.priority >= 3 ? 'Quitar prioridad alta' : 'Prioridad alta', icon: 'flag', run: () => { it.priority = it.priority >= 3 ? 0 : 3; it.updated = Date.now(); save(); render(); } },
+    { k: 'dup', label: 'Duplicar', icon: 'plus', run: () => { const c = newItem(Object.assign({}, it, { done: false, doneAt: null, doneDates: {}, created: Date.now(), updated: Date.now() })); c.id = uid(); state.items.push(c); save(); render(); toast('Duplicada', c.title, 'ok', 1500); } },
+    { k: 'del', label: 'Eliminar', icon: 'trash', cls: 'danger', run: () => delItem(id) }
+  ]);
+}
 
 /* ===== ficha de tarea / reunión ===== */
 let sheetState = null;
@@ -408,8 +447,9 @@ function openSettings() {
   const s = state.settings; const perm = ('Notification' in window) ? Notification.permission : 'unsupported';
   openSheet('<div class="sheet-head"><h2>Ajustes</h2><button class="icon-btn" data-act="sheet-close">' + ico('x') + '</button></div><div class="form">' +
     '<div class="field full"><label>Tu nombre (para el saludo)</label><input name="sname" value="' + esc(s.name || '') + '" placeholder="Nombre"></div>' +
-    '<div class="field"><label>Tema</label>' + sel('stheme', [['auto', 'Como Windows'], ['light', 'Claro'], ['dark', 'Oscuro']], s.theme) + '</div>' +
-    '<div class="field"><label>Sonido</label><div class="toggle' + (s.sound ? ' on' : '') + '" data-act="toggle-sound"><span>Sonido en los avisos</span><i class="sw"></i></div></div>' +
+    '<div class="field"><label>Tema</label>' + sel('stheme', [['auto', 'Como el sistema'], ['light', 'Claro'], ['dark', 'Oscuro']], s.theme) + '</div>' +
+    '<div class="field"><label>Densidad</label>' + sel('sdensity', [['compacta', 'Compacta'], ['comoda', 'Cómoda']], s.density || 'compacta') + '</div>' +
+    '<div class="field full"><label>Sonido</label><div class="toggle' + (s.sound ? ' on' : '') + '" data-act="toggle-sound"><span>Sonido en los avisos</span><i class="sw"></i></div></div>' +
     '<div class="field full"><label>Avisos de Windows</label><div class="toggle' + (perm === 'granted' ? ' on' : '') + '" data-act="ask-notif"><span>' + (perm === 'granted' ? 'Activados' : perm === 'denied' ? 'Bloqueados en el navegador (candado de la barra de direcciones)' : 'Pulsa para activar') + '</span><i class="sw"></i></div><p class="hint" style="margin-top:6px">Con la app abierta (aunque esté minimizada o detrás) los avisos salen como notificaciones de Windows con sonido. Si la cierras del todo no puede avisarte.</p></div>' +
     '<div class="field full"><label>Datos</label><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" data-act="export-json">Copia de seguridad (.json)</button><button class="btn sm" data-act="import-json">Restaurar copia</button><button class="btn sm" data-act="export-ics">Exportar a Outlook / Google (.ics)</button></div><input type="file" id="importFile" accept=".json" class="hidden"></div>' +
     '<div class="field full"><label>Atajos</label><p class="hint"><code>N</code> añadir · <code>Ctrl+K</code> buscar · <code>Esc</code> cerrar · <code>Ctrl+Enter</code> guardar la ficha · <code>1</code>–<code>5</code> cambiar de vista</p></div>' +
@@ -522,7 +562,8 @@ function onAction(e) {
     case 'toggle': toggleDone(id, occD || todayYmd()); break;
     case 'open': openItem(id, occD); break;
     case 'del': delItem(id); break;
-    case 'go': go(el.dataset.view); break;
+    case 'go': go(el.dataset.view, null, el.dataset.filter || null); break;
+    case 'menu': { const r = el.getBoundingClientRect(); itemMenu(id, occD, r.left - 150, r.bottom + 4); break; }
     case 'new-task': openItem(null, null, { date: todayYmd(), list: state.view === 'list' ? state.listId : 'inbox' }); break;
     case 'new-event': openItem(null, null, { type: 'event', date: todayYmd(), time: nextHour(), end: addMin(nextHour(), 60), reminder: 15, list: evList }); break;
     case 'new-on': openItem(null, null, el.dataset.type === 'event' ? { type: 'event', date: el.dataset.date, time: '10:00', end: '11:00', reminder: 15, list: evList } : { date: el.dataset.date, list: state.view === 'list' ? state.listId : 'inbox' }); break;
@@ -545,7 +586,7 @@ function onAction(e) {
     case 'list-del': delList(sheetState.listId); break;
     case 'toggle-sound': state.settings.sound = !state.settings.sound; el.classList.toggle('on', state.settings.sound); save(); if (state.settings.sound) chime('done'); break;
     case 'ask-notif': askNotif(); break;
-    case 'settings-save': state.settings.name = $('#sheet [name="sname"]').value.trim(); state.settings.theme = $('#sheet [name="stheme"]').value; save(); applyTheme(); closeSheet(); render(); break;
+    case 'settings-save': state.settings.name = $('#sheet [name="sname"]').value.trim(); state.settings.theme = $('#sheet [name="stheme"]').value; state.settings.density = $('#sheet [name="sdensity"]').value; save(); applyTheme(); applyDensity(); closeSheet(); render(); break;
     case 'export-json': exportJson(); break;
     case 'export-ics': exportIcs(); break;
     case 'import-json': $('#importFile').click(); break;
@@ -566,12 +607,15 @@ function openMoreSheet() {
 
 /* ===== arranque ===== */
 function init() {
-  load(); applyTheme(); updateNotifBtn();
+  load(); applyTheme(); applyDensity(); updateNotifBtn();
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+  document.addEventListener('click', e => { if (menuEl && !menuEl.contains(e.target)) closeMenu(); }, true);
   document.body.addEventListener('click', onAction);
-  $('#nav').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) go(b.dataset.view); });
+  $('#view').addEventListener('contextmenu', e => { const row = e.target.closest('[data-id]'); if (!row) return; e.preventDefault(); itemMenu(row.dataset.id, row.dataset.occ || null, e.clientX, e.clientY); });
+  $('#view').addEventListener('scroll', closeMenu);
+  $('#nav').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) go(b.dataset.view, null, b.dataset.view === 'all' ? 'all' : null); });
   $('#listNav').addEventListener('click', e => { const b = e.target.closest('[data-list]'); if (b) go('list', b.dataset.list); });
-  $('#tabbar').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) go(b.dataset.view); });
+  $('#tabbar').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) go(b.dataset.view, null, b.dataset.view === 'all' ? 'all' : null); });
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     navigator.serviceWorker.register('./sw.js').catch(() => { });
     navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'open' && e.data.id) openItem(e.data.id, e.data.date || null); });
@@ -597,7 +641,7 @@ function init() {
   document.body.addEventListener('change', e => { if (e.target.id === 'importFile' && e.target.files[0]) { importJson(e.target.files[0]); e.target.value = ''; } });
   document.addEventListener('keydown', e => {
     const tag = document.activeElement ? document.activeElement.tagName : ''; const inField = /^(INPUT|TEXTAREA|SELECT)$/.test(tag);
-    if (e.key === 'Escape') { if (!$('#sheetWrap').classList.contains('hidden')) closeSheet(); else if (!$('#searchWrap').classList.contains('hidden')) closeSearch(); return; }
+    if (e.key === 'Escape') { if (menuEl) closeMenu(); else if (!$('#sheetWrap').classList.contains('hidden')) closeSheet(); else if (!$('#searchWrap').classList.contains('hidden')) closeSearch(); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearch(); return; }
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && sheetState && sheetState.draft) { e.preventDefault(); saveSheet(); return; }
     if (inField) return;

@@ -28,10 +28,12 @@ Entiende fechas (hoy, mañana, lunes…, 15/11, 15 de noviembre, el 15), horas (
 
 ## Vistas
 
-- **Hoy:** anillo de progreso, vencidas / para hoy / semana / total, agenda por horas con «Siguiente», tareas.
+- **Hoy:** todo de un vistazo en tres columnas: agenda por horas (con «Siguiente»), tareas (vencidas, hoy, sin fecha) y los próximos 7 días; cifras de vencidas / para hoy / semana / pendientes en la cabecera.
 - **Próximos:** los 30 días siguientes.
 - **Calendario:** mes o semana; arrastra una tarea a otro día para moverla.
-- **Todo pendiente**, **Completadas** y **listas** de colores.
+- **Tareas:** todo lo pendiente con filtros (tareas, reuniones, importantes, vencidas, sin fecha, completadas) y **listas** de colores.
+- **Menú rápido** en cada fila (botón `…` o clic derecho): Hoy, Mañana, Lunes que viene, quitar fecha, prioridad, duplicar, eliminar.
+- Densidad **compacta** por defecto; en Ajustes se puede pasar a «Cómoda».
 
 Atajos: `N` añadir · `Ctrl+K` buscar · `1`–`5` vistas · `Esc` cerrar · `Ctrl+Intro` guardar.
 

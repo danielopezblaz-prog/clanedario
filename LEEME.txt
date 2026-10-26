@@ -37,10 +37,14 @@ AÑADIR RÁPIDO (cuadro de arriba, tecla N)
   Si pone «reunión», «cita», «llamada», «visita»… lo guarda como reunión (hora de fin y aviso 15 min antes).
 
 VISTAS
-  Hoy         saludo, anillo de progreso, vencidas / para hoy / semana / total, agenda por horas y tareas.
+  Hoy         todo de un vistazo: agenda por horas (con «Siguiente»), tareas (vencidas, hoy, sin fecha) y los próximos 7 días;
+              arriba las cifras de vencidas / para hoy / esta semana / pendientes (pulsables).
   Próximos    los 30 días siguientes, día a día.
   Calendario  mes o semana; arrastra una tarea a otro día para moverla; panel del día.
-  Todo pendiente / Completadas / Mis listas (color y nombre editables). En el móvil, todo desde la barra de abajo y «Más».
+  Tareas      todo lo pendiente con filtros: Todo · Tareas · Reuniones · Importantes · Vencidas · Sin fecha · Completadas.
+  Mis listas  color y nombre editables. En el móvil, todo desde la barra de abajo y «Más».
+  Menú rápido en cada fila (botón … o clic derecho): Hoy, Mañana, Lunes que viene, quitar fecha, prioridad alta, duplicar, eliminar.
+  Densidad compacta por defecto; en Ajustes puedes pasar a «Cómoda» si la quieres más espaciosa.
   Cabecera: «Siguiente: …» con la cuenta atrás de la próxima reunión.
 
 ATAJOS (ordenador)
