@@ -1,12 +1,12 @@
-# Clawndario
+# Clanedario
 
 Tareas, calendario y recordatorios de reuniones en una sola app, con estética tipo iOS. Sin cuentas, sin servidor: todo se guarda en tu dispositivo.
 
-**Abrir:** https://danielopezblaz-prog.github.io/clawndario/
+**Abrir:** https://danielopezblaz-prog.github.io/clanedario/
 
 ## Instalar
 
-- **Escritorio (Windows / Mac):** abre la URL en Chrome o Edge y pulsa el icono «Instalar» de la barra de direcciones (o menú ⋮ → *Instalar Clawndario*). Queda como una app con su propia ventana e icono.
+- **Escritorio (Windows / Mac):** abre la URL en Chrome o Edge y pulsa el icono «Instalar» de la barra de direcciones (o menú ⋮ → *Instalar Clanedario*). Queda como una app con su propia ventana e icono.
 - **Android:** abre la URL en Chrome → menú ⋮ → *Añadir a pantalla de inicio* / *Instalar app*.
 - **iPhone / iPad:** abre la URL en Safari → botón *Compartir* → *Añadir a pantalla de inicio*.
 - **Sin internet:** en Windows, `instalar.ps1` crea un acceso directo que abre la copia local en una ventana propia de Chrome.

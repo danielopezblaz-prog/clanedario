@@ -1,7 +1,7 @@
-﻿# Instala Clawndario como aplicación de escritorio en Windows:
-#  - dibuja los iconos (clawndario.ico para Windows; icon-192/512.png para la app instalable)
+﻿# Instala Clanedario como aplicación de escritorio en Windows:
+#  - dibuja los iconos (clanedario.ico para Windows; icon-192/512.png para la app instalable)
 #  - crea el acceso directo en el menú Inicio (buscable y anclable a la barra de tareas)
-#  - deja otro acceso directo "Clawndario.lnk" en esta carpeta por si quieres copiarlo al escritorio
+#  - deja otro acceso directo "Clanedario.lnk" en esta carpeta por si quieres copiarlo al escritorio
 $ErrorActionPreference = 'Stop'
 $dir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $html = Join-Path $dir 'index.html'
@@ -62,7 +62,7 @@ $png256 = [byte[]](Draw-Icon 256 $false)
 [System.IO.File]::WriteAllBytes((Join-Path $dir 'icon-192.png'), [byte[]](Draw-Icon 192 $false))
 [System.IO.File]::WriteAllBytes((Join-Path $dir 'icon-512.png'), [byte[]](Draw-Icon 512 $false))
 [System.IO.File]::WriteAllBytes((Join-Path $dir 'icon-maskable-512.png'), [byte[]](Draw-Icon 512 $true))
-$icoPath = Join-Path $dir 'clawndario.ico'
+$icoPath = Join-Path $dir 'clanedario.ico'
 $fs = [System.IO.File]::Create($icoPath)
 $bw = New-Object System.IO.BinaryWriter($fs)
 $bw.Write([uint16]0); $bw.Write([uint16]1); $bw.Write([uint16]1)
@@ -78,16 +78,16 @@ function Make-Lnk($p) {
   $s.Arguments = $argStr
   $s.WorkingDirectory = $dir
   $s.IconLocation = "$icoPath,0"
-  $s.Description = 'Clawndario: tareas, calendario y recordatorios'
+  $s.Description = 'Clanedario: tareas, calendario y recordatorios'
   $s.Save()
 }
 $programs = Join-Path ([Environment]::GetFolderPath('StartMenu')) 'Programs'
-foreach ($old in @((Join-Path $programs 'Agenda.lnk'), (Join-Path $dir 'Agenda.lnk'), (Join-Path $dir 'agenda.ico'))) { if (Test-Path $old) { Remove-Item $old } }
-$startMenu = Join-Path $programs 'Clawndario.lnk'
+foreach ($old in @((Join-Path $programs 'Agenda.lnk'), (Join-Path $dir 'Agenda.lnk'), (Join-Path $dir 'agenda.ico'), (Join-Path $programs 'Clawndario.lnk'), (Join-Path $dir 'Clawndario.lnk'), (Join-Path $dir 'clawndario.ico'))) { if (Test-Path $old) { Remove-Item $old } }
+$startMenu = Join-Path $programs 'Clanedario.lnk'
 Make-Lnk $startMenu
-Make-Lnk (Join-Path $dir 'Clawndario.lnk')
+Make-Lnk (Join-Path $dir 'Clanedario.lnk')
 Write-Host "Listo."
 Write-Host "  Navegador: $browser"
 Write-Host "  Menu Inicio: $startMenu"
-Write-Host "  Acceso directo en la carpeta: $(Join-Path $dir 'Clawndario.lnk')"
-Write-Host "Para tenerla en la barra de tareas: busca 'Clawndario' en Inicio, boton derecho, 'Anclar a la barra de tareas'."
+Write-Host "  Acceso directo en la carpeta: $(Join-Path $dir 'Clanedario.lnk')"
+Write-Host "Para tenerla en la barra de tareas: busca 'Clanedario' en Inicio, boton derecho, 'Anclar a la barra de tareas'."

@@ -1,9 +1,9 @@
-CLAWNDARIO · tareas, calendario y recordatorios
+CLANEDARIO · tareas, calendario y recordatorios
 ================================================
 
 EN INTERNET (escritorio y móvil)
-  https://danielopezblaz-prog.github.io/clawndario/
-  Ordenador: ábrela en Chrome o Edge y pulsa «Instalar» en la barra de direcciones (o menú ⋮ → Instalar Clawndario).
+  https://danielopezblaz-prog.github.io/clanedario/
+  Ordenador: ábrela en Chrome o Edge y pulsa «Instalar» en la barra de direcciones (o menú ⋮ → Instalar Clanedario).
              Queda como app con su ventana e icono; se puede anclar a la barra de tareas.
   Android:   Chrome → menú ⋮ → «Añadir a pantalla de inicio» / «Instalar app».
   iPhone:    Safari → Compartir → «Añadir a pantalla de inicio».
@@ -11,7 +11,7 @@ EN INTERNET (escritorio y móvil)
   Ajustes → Copia de seguridad (.json) en uno, y Ajustes → Restaurar copia en el otro.
 
 EN ESTE PC SIN INTERNET
-  Doble clic en Clawndario.lnk, o busca «Clawndario» en el menú Inicio (botón derecho → anclar a la barra de tareas).
+  Doble clic en Clanedario.lnk, o busca «Clanedario» en el menú Inicio (botón derecho → anclar a la barra de tareas).
   Abre la copia local en una ventana propia de Chrome. Si mueves la carpeta, vuelve a ejecutar instalar.ps1
   (botón derecho → Ejecutar con PowerShell).
 
@@ -51,7 +51,7 @@ DATOS
   para guardarla donde quieras y «Restaurar copia» para recuperarla. «Exportar .ics» mete todo en Outlook o Google Calendar.
 
 CÓDIGO
-  Repositorio: https://github.com/danielopezblaz-prog/clawndario (cada cambio subido a «main» se publica solo).
+  Repositorio: https://github.com/danielopezblaz-prog/clanedario (cada cambio subido a «main» se publica solo).
   index.html, app.css, app.js       la aplicación
   sw.js, manifest.webmanifest       funciona sin conexión e instalable (PWA)
   instalar.ps1 / autoinicio.ps1     Windows: icono y accesos directos / abrir al iniciar sesión

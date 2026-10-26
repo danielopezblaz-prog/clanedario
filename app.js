@@ -52,7 +52,7 @@ function newItem(p) { return Object.assign({ id: uid(), type: 'task', title: '',
 function seed() {
   const t = todayYmd();
   state.items = [
-    newItem({ title: 'Bienvenido a Clawndario 👋', notes: 'Escribe arriba en lenguaje natural: «Reunión con Dani mañana 10:30 #trabajo !alta». Entiende hoy, mañana, lunes…, 15/11, «de 10 a 11», #lista, !alta / !media / !baja, «cada semana» y «avisa 30 min antes».', date: t, list: 'inbox', priority: 1 }),
+    newItem({ title: 'Bienvenido a Clanedario 👋', notes: 'Escribe arriba en lenguaje natural: «Reunión con Dani mañana 10:30 #trabajo !alta». Entiende hoy, mañana, lunes…, 15/11, «de 10 a 11», #lista, !alta / !media / !baja, «cada semana» y «avisa 30 min antes».', date: t, list: 'inbox', priority: 1 }),
     newItem({ type: 'event', title: 'Reunión de ejemplo', date: addDays(t, 1), time: '10:30', end: '11:30', list: 'reuniones', location: 'Oficina', reminder: 15, notes: 'Puedes borrarla sin miedo.' }),
     newItem({ title: 'Revisar pendientes de la semana', date: addDays(t, 2), time: '09:00', list: 'trabajo', priority: 2, reminder: 0 })
   ];
@@ -302,7 +302,7 @@ function renderSidebar() {
   $('#badgeToday').textContent = n || ''; $('#badgeAll').textContent = pendingAll().length || '';
   $('#listNav').innerHTML = state.lists.map(l => { const c = state.items.filter(it => it.list === l.id && (isRep(it) || !it.done)).length; return '<button class="nav-btn' + (state.view === 'list' && state.listId === l.id ? ' active' : '') + '" data-list="' + l.id + '"><i class="dot" style="background:' + l.color + ';color:' + l.color + '"></i><span>' + esc(l.name) + '</span><span class="count">' + (c || '') + '</span></button>'; }).join('');
   const now = new Date(); $('#brandDate').textContent = cap(DAYS[now.getDay()]) + ' ' + now.getDate() + ' de ' + MONTHS[now.getMonth()];
-  document.title = n ? '(' + n + ') Clawndario' : 'Clawndario';
+  document.title = n ? '(' + n + ') Clanedario' : 'Clanedario';
   renderMini(); renderNextUp();
 }
 function renderMini() {
@@ -416,13 +416,13 @@ function openSettings() {
     '</div><div class="sheet-foot"><span class="spacer"></span><button class="btn primary" data-act="settings-save">Guardar</button></div>');
 }
 function download(name, text, type) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: type || 'application/octet-stream' })); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800); }
-function exportJson() { download('clawndario-copia-' + todayYmd() + '.json', JSON.stringify({ v: 1, items: state.items, lists: state.lists, settings: state.settings }, null, 1), 'application/json'); toast('Copia descargada', 'Guárdala donde quieras', 'ok'); }
+function exportJson() { download('clanedario-copia-' + todayYmd() + '.json', JSON.stringify({ v: 1, items: state.items, lists: state.lists, settings: state.settings }, null, 1), 'application/json'); toast('Copia descargada', 'Guárdala donde quieras', 'ok'); }
 function exportIcs() {
-  const NL = String.fromCharCode(10); const CRLF = String.fromCharCode(13, 10); const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Clawndario//ES', 'CALSCALE:GREGORIAN'];
+  const NL = String.fromCharCode(10); const CRLF = String.fromCharCode(13, 10); const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Clanedario//ES', 'CALSCALE:GREGORIAN'];
   const dt = (d, t) => d.replace(/-/g, '') + (t ? 'T' + t.replace(':', '') + '00' : '');
   const RR = { daily: 'FREQ=DAILY', weekdays: 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR', weekly: 'FREQ=WEEKLY', biweekly: 'FREQ=WEEKLY;INTERVAL=2', monthly: 'FREQ=MONTHLY', yearly: 'FREQ=YEARLY' };
   state.items.filter(it => it.date && !(it.done && !isRep(it))).forEach(it => {
-    lines.push('BEGIN:VEVENT', 'UID:' + it.id + '@clawndario', 'DTSTAMP:' + dt(todayYmd(), '00:00'), 'SUMMARY:' + it.title.replace(/[,;]/g, ' '));
+    lines.push('BEGIN:VEVENT', 'UID:' + it.id + '@clanedario', 'DTSTAMP:' + dt(todayYmd(), '00:00'), 'SUMMARY:' + it.title.replace(/[,;]/g, ' '));
     if (it.time) lines.push('DTSTART:' + dt(it.date, it.time), 'DTEND:' + dt(it.date, it.end || addMin(it.time, 60))); else lines.push('DTSTART;VALUE=DATE:' + dt(it.date), 'DTEND;VALUE=DATE:' + dt(addDays(it.date, 1)));
     if (it.location) lines.push('LOCATION:' + it.location.replace(/[,;]/g, ' '));
     if (it.notes) lines.push('DESCRIPTION:' + it.notes.split(NL).join(' ').replace(/[,;]/g, ' '));
@@ -430,11 +430,11 @@ function exportIcs() {
     if (it.reminder != null) lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + it.title, 'TRIGGER:-PT' + it.reminder + 'M', 'END:VALARM');
     lines.push('END:VEVENT');
   });
-  lines.push('END:VCALENDAR'); download('clawndario.ics', lines.join(CRLF), 'text/calendar'); toast('Calendario exportado', 'Ábrelo con Outlook o impórtalo en Google Calendar', 'ok');
+  lines.push('END:VCALENDAR'); download('clanedario.ics', lines.join(CRLF), 'text/calendar'); toast('Calendario exportado', 'Ábrelo con Outlook o impórtalo en Google Calendar', 'ok');
 }
 function importJson(file) {
   const rd = new FileReader();
-  rd.onload = () => { try { const d = JSON.parse(rd.result); if (!Array.isArray(d.items)) throw new Error('El archivo no es una copia de Clawndario'); if (!confirm('Se sustituirán los datos actuales por los de la copia (' + d.items.length + ' elementos). ¿Seguir?')) return; state.items = d.items; state.lists = d.lists && d.lists.length ? d.lists : state.lists; Object.assign(state.settings, d.settings || {}); state.fired = {}; save(); closeSheet(); applyTheme(); render(); toast('Copia restaurada', d.items.length + ' elementos', 'ok'); } catch (e) { toast('No se pudo importar', String(e.message || e), 'info'); } };
+  rd.onload = () => { try { const d = JSON.parse(rd.result); if (!Array.isArray(d.items)) throw new Error('El archivo no es una copia de Clanedario'); if (!confirm('Se sustituirán los datos actuales por los de la copia (' + d.items.length + ' elementos). ¿Seguir?')) return; state.items = d.items; state.lists = d.lists && d.lists.length ? d.lists : state.lists; Object.assign(state.settings, d.settings || {}); state.fired = {}; save(); closeSheet(); applyTheme(); render(); toast('Copia restaurada', d.items.length + ' elementos', 'ok'); } catch (e) { toast('No se pudo importar', String(e.message || e), 'info'); } };
   rd.readAsText(file);
 }
 
