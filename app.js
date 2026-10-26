@@ -10,6 +10,7 @@ const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 
 const MONTHS_S = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const COLORS = ['#007AFF', '#AF52DE', '#34C759', '#FF9500', '#FF3B30', '#5AC8FA', '#FF2D55', '#5856D6', '#FFCC00', '#8E8E93'];
 const HOUR = 52;
+const APP_VERSION = '26-10-2026 · 5';
 const ymd = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
 const fromYmd = s => { const p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); };
 const todayYmd = () => ymd(new Date());
@@ -453,6 +454,7 @@ function openSettings() {
     '<div class="field full"><label>Avisos de Windows</label><div class="toggle' + (perm === 'granted' ? ' on' : '') + '" data-act="ask-notif"><span>' + (perm === 'granted' ? 'Activados' : perm === 'denied' ? 'Bloqueados en el navegador (candado de la barra de direcciones)' : 'Pulsa para activar') + '</span><i class="sw"></i></div><p class="hint" style="margin-top:6px">Con la app abierta (aunque esté minimizada o detrás) los avisos salen como notificaciones de Windows con sonido. Si la cierras del todo no puede avisarte.</p></div>' +
     '<div class="field full"><label>Datos</label><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" data-act="export-json">Copia de seguridad (.json)</button><button class="btn sm" data-act="import-json">Restaurar copia</button><button class="btn sm" data-act="export-ics">Exportar a Outlook / Google (.ics)</button></div><input type="file" id="importFile" accept=".json" class="hidden"></div>' +
     '<div class="field full"><label>Atajos</label><p class="hint"><code>N</code> añadir · <code>Ctrl+K</code> buscar · <code>Esc</code> cerrar · <code>Ctrl+Enter</code> guardar la ficha · <code>1</code>–<code>5</code> cambiar de vista</p></div>' +
+    '<div class="field full"><label>Versión</label><p class="hint">' + APP_VERSION + ' · Si no ves la última, cierra la app y vuelve a abrirla (o pulsa F5).</p></div>' +
     '</div><div class="sheet-foot"><span class="spacer"></span><button class="btn primary" data-act="settings-save">Guardar</button></div>');
 }
 function download(name, text, type) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: type || 'application/octet-stream' })); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800); }
@@ -617,7 +619,12 @@ function init() {
   $('#listNav').addEventListener('click', e => { const b = e.target.closest('[data-list]'); if (b) go('list', b.dataset.list); });
   $('#tabbar').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) go(b.dataset.view, null, b.dataset.view === 'all' ? 'all' : null); });
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-    navigator.serviceWorker.register('./sw.js').catch(() => { });
+    const hadController = !!navigator.serviceWorker.controller; let reloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (!hadController || reloading) return; reloading = true; toast('Actualizando', 'Cargando la versión nueva…', 'info', 1500); setTimeout(() => location.reload(), 500); });
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      setInterval(() => reg.update().catch(() => { }), 30 * 60000);
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => { }); });
+    }).catch(() => { });
     navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'open' && e.data.id) openItem(e.data.id, e.data.date || null); });
   }
   $('#addList').addEventListener('click', () => openListSheet(null));

@@ -1,5 +1,5 @@
 /* Clanedario: service worker. Guarda la app para que abra sin conexión y muestra los avisos en el móvil. */
-const CACHE = 'clanedario-v4';
+const CACHE = 'clanedario-v5';
 const FILES = ['./', './index.html', './app.css', './app.js', './icon.svg', './icon.png', './icon-192.png', './icon-512.png', './manifest.webmanifest'];
 
 self.addEventListener('install', e => {
