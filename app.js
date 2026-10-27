@@ -10,7 +10,7 @@ const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 
 const MONTHS_S = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const COLORS = ['#007AFF', '#AF52DE', '#34C759', '#FF9500', '#FF3B30', '#5AC8FA', '#FF2D55', '#5856D6', '#FFCC00', '#8E8E93'];
 const HOUR = 52;
-const APP_VERSION = '27-10-2026 · 9';
+const APP_VERSION = '27-10-2026 · 10';
 /* Modo empresa: index.php de proyecton.es inyecta CLAN_USUARIO (quién soy) y CLAN_APPS (lanzador). Sin eso, app personal. */
 const SRV = (window.CLAN_USUARIO && window.CLAN_USUARIO.usuario) ? window.CLAN_USUARIO : null;
 const YO = SRV ? SRV.usuario : '';
