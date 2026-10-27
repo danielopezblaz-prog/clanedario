@@ -376,6 +376,34 @@ h2 .n{color:var(--muted);font-weight:600;font-size:13px}
 :root[data-density="compacta"] .filters .chip{padding:4px 10px;font-size:12px}
 :root[data-density="compacta"] .toasts{width:320px}
 
+/* ===== marca Proyecton (modo empresa): Sora + Manrope, rojo #B8251B, tinta #1A1A1A, fondo rosado ===== */
+:root[data-marca="proyecton"]{--font:"Manrope","Inter","Segoe UI",system-ui,sans-serif;--titulo:"Sora","Manrope","Segoe UI",sans-serif;--blue:#B8251B;--indigo:#8E1F17;--bg:#F6F1F0;--text:#1A1A1A;--text2:#3A3A3C;--muted:#7A7A7A;--sep:rgba(26,26,26,.12);--card:rgba(255,255,255,.86);--glass:rgba(255,255,255,.72)}
+:root[data-marca="proyecton"][data-theme="dark"]{--blue:#E04A3F;--indigo:#B8251B;--bg:#141112;--bg2:#1B1718;--card:rgba(34,28,29,.82);--card-solid:#231E1F;--glass:rgba(28,23,24,.75);--text:#F6F1F0;--text2:#D9D2D1;--muted:#9A9090;--sep:rgba(255,255,255,.1)}
+:root[data-marca="proyecton"] h1,:root[data-marca="proyecton"] h2,:root[data-marca="proyecton"] .brand-name,:root[data-marca="proyecton"] .stat b,:root[data-marca="proyecton"] .kpi b,:root[data-marca="proyecton"] .cal-head h1,:root[data-marca="proyecton"] .day-panel .dp-head b,:root[data-marca="proyecton"] .team-card .th b,:root[data-marca="proyecton"] .sheet-head h2,:root[data-marca="proyecton"] .sheet .title-in{font-family:var(--titulo);letter-spacing:-.3px}
+:root[data-marca="proyecton"] .b1{background:radial-gradient(circle,#f3c4bf,transparent 70%)}
+:root[data-marca="proyecton"] .b2{background:radial-gradient(circle,#ffd3cc,transparent 70%)}
+:root[data-marca="proyecton"] .b3{background:radial-gradient(circle,#e1e4e9,transparent 70%)}
+:root[data-marca="proyecton"] .brand-icon{background:#fff;box-shadow:0 4px 14px rgba(184,37,27,.22);padding:3px;overflow:hidden}
+:root[data-marca="proyecton"] .brand-icon img{width:100%;height:100%;object-fit:contain;display:block}
+:root[data-marca="proyecton"] .brand-sub{color:var(--blue);font-weight:700;letter-spacing:.3px;text-transform:uppercase;font-size:10px}
+:root[data-marca="proyecton"] .eyebrow{color:var(--blue)}
+:root[data-marca="proyecton"] .nav-btn.active{box-shadow:inset 3px 0 0 var(--blue),var(--shadow)}
+:root[data-marca="proyecton"] .c-blue{background:#B8251B}
+:root[data-marca="proyecton"] .c-red{background:#1A1A1A}
+:root[data-marca="proyecton"] .c-purple{background:#8E1F17}
+:root[data-marca="proyecton"] .c-green{background:#2E7D57}
+:root[data-marca="proyecton"] .c-orange{background:#B7791F}
+:root[data-marca="proyecton"] .btn.primary{box-shadow:0 6px 16px rgba(184,37,27,.28)}
+:root[data-marca="proyecton"] .ring{background:conic-gradient(var(--blue) calc(var(--p)*1%),var(--fill) 0)}
+:root[data-marca="proyecton"] .cal-cell.today .cal-n,:root[data-marca="proyecton"] .week .wh.today b{background:#1A1A1A}
+:root[data-marca="proyecton"] .mini-grid .d.t{background:var(--blue)}
+:root[data-marca="proyecton"] .tabbar button.active{color:var(--blue)}
+:root[data-marca="proyecton"] .logo-cab{display:block;height:44px;margin:2px 6px 10px}
+:root[data-marca="proyecton"] .logo-cab img{height:44px;width:auto;max-width:100%;display:block;background:#fff;border-radius:10px;padding:4px 10px;object-fit:contain}
+:root[data-marca="proyecton"] .brand{display:none}
+:root[data-marca="proyecton"] .row-title{font-weight:600}
+:root[data-marca="proyecton"] .quick:focus-within{border-color:var(--blue);box-shadow:0 0 0 4px rgba(184,37,27,.14),var(--shadow)}
+
 /* modo empresa: personas, equipo, obras, apps, conexión */
 .who{display:flex;gap:4px;flex-wrap:wrap;align-items:center;padding:0 6px 8px}
 .av{width:26px;height:26px;border-radius:50%;display:inline-grid;place-items:center;color:#fff;font-size:11px;font-weight:800;border:2px solid transparent;cursor:pointer;flex:none;line-height:1}
@@ -419,6 +447,23 @@ h2 .n{color:var(--muted);font-weight:600;font-size:13px}
 .obras-q{display:flex;gap:8px;align-items:center;margin-bottom:10px}
 .obras-q input{flex:1;height:36px;border-radius:11px;border:1px solid transparent;background:var(--fill);padding:0 12px;outline:none}
 .obras-q input:focus{border-color:var(--blue)}
+.nota{display:flex;gap:8px;padding:7px 2px;border-bottom:1px solid var(--sep);align-items:flex-start}
+.nota > div{min-width:0}
+.nota-m{font-size:11px;color:var(--muted)}
+.nota-t{font-size:13px;white-space:pre-wrap;word-break:break-word}
+.nota-form{display:flex;gap:6px;align-items:flex-start;margin-bottom:8px}
+.nota-form textarea,.nota-form input{flex:1;min-width:0;min-height:38px;border-radius:11px;border:1px solid transparent;background:var(--fill);padding:8px 10px;outline:none;font:inherit}
+.nota-form textarea{min-height:64px;resize:vertical}
+.nota-form textarea:focus,.nota-form input:focus{border-color:var(--blue)}
+.coms{max-height:220px;overflow:auto;margin-bottom:6px}
+.datos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:4px 14px}
+.datos-grid div{display:flex;flex-direction:column;padding:5px 0;border-bottom:1px solid var(--sep)}
+.datos-grid span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+.datos-grid b{font-size:13px;font-weight:600;word-break:break-word}
+.icon-btn{position:relative}
+.icon-btn[data-n]:not([data-n=""])::after{content:attr(data-n);position:absolute;top:1px;right:1px;min-width:16px;height:16px;border-radius:8px;background:var(--red);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 4px;line-height:1}
+.kpis a.kpi{text-decoration:none}
+#icsBox input{width:100%;height:36px;border-radius:10px;border:1px solid var(--sep);background:var(--fill);padding:0 10px;font-size:12px}
 
 /* barra inferior (móvil) y hoja «Más» */
 .tabbar{display:none}

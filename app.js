@@ -10,11 +10,12 @@ const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 
 const MONTHS_S = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const COLORS = ['#007AFF', '#AF52DE', '#34C759', '#FF9500', '#FF3B30', '#5AC8FA', '#FF2D55', '#5856D6', '#FFCC00', '#8E8E93'];
 const HOUR = 52;
-const APP_VERSION = '27-10-2026 · 6';
+const APP_VERSION = '27-10-2026 · 7';
 /* Modo empresa: index.php de proyecton.es inyecta CLAN_USUARIO (quién soy) y CLAN_APPS (lanzador). Sin eso, app personal. */
 const SRV = (window.CLAN_USUARIO && window.CLAN_USUARIO.usuario) ? window.CLAN_USUARIO : null;
 const YO = SRV ? SRV.usuario : '';
 const APPS = Array.isArray(window.CLAN_APPS) ? window.CLAN_APPS : [];
+if (SRV) document.documentElement.dataset.marca = 'proyecton';
 const ymd = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
 const fromYmd = s => { const p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); };
 const todayYmd = () => ymd(new Date());
@@ -164,6 +165,7 @@ function rowHtml(o, opts) {
   if (isRep(o)) meta.push(ico('repeat'));
   if (o.reminder != null) meta.push(ico('bell'));
   if (o.obra && o.obra.nombre) meta.push(ico('inbox') + esc(o.obra.nombre));
+  if (o.comentarios && o.comentarios.length) meta.push('💬 ' + o.comentarios.length);
   if (SRV) { const ppl = []; if (o.autor && o.autor !== YO) ppl.push(o.autor); (o.para || []).forEach(p => { if (p !== YO && p !== o.autor) ppl.push(p); }); if (ppl.length) meta.push(ppl.map(p => avHtml(p, 'sm')).join('')); if (o.privado) meta.push('🔒'); }
   if (o.notes) meta.push(esc(o.notes.slice(0, 70)));
   const past = o.occ === t && !o.isDone && o.time && (o.end ? minutes(o.end) : minutes(o.time) + 30) < nowMin();
@@ -363,6 +365,7 @@ function renderSidebar() {
       '<span class="av all' + (state.quien === 'todos' ? ' on' : '') + '" data-act="quien" data-u="todos" title="Todo el equipo">' + ico('users') + '</span>' +
       '<span class="lbl">' + (state.quien === 'yo' ? 'Lo mío' : state.quien === 'todos' ? 'Todo el equipo' : esc(persona(state.quien).nombre)) + '</span>';
     $('#appsNav').innerHTML = APPS.map(a => '<a class="nav-btn" href="' + esc(a.url) + '" target="_blank" rel="noopener" title="' + esc(a.desc || '') + '"><span class="app-ic" style="background:' + esc(a.color) + '">' + esc(a.nombre.charAt(0)) + '</span><span>' + esc(a.nombre) + '</span></a>').join('');
+    const nb = novedades().length; $('#notifBtn').dataset.n = nb ? String(nb) : '';
   }
   document.title = n ? '(' + n + ') Clanedario' : 'Clanedario';
   renderMini(); renderNextUp();
@@ -388,7 +391,7 @@ function renderNextUp() {
 }
 function render() {
   const v = $('#view'); const st = v.scrollTop;
-  v.innerHTML = state.view === 'today' ? viewToday() : state.view === 'upcoming' ? viewUpcoming() : state.view === 'calendar' ? viewCalendar() : state.view === 'list' ? viewList() : state.view === 'done' ? viewDone() : state.view === 'equipo' ? viewEquipo() : state.view === 'obras' ? viewObras() : viewAll();
+  v.innerHTML = state.view === 'today' ? viewToday() : state.view === 'upcoming' ? viewUpcoming() : state.view === 'calendar' ? viewCalendar() : state.view === 'list' ? viewList() : state.view === 'done' ? viewDone() : state.view === 'equipo' ? viewEquipo() : state.view === 'obras' ? viewObras() : state.view === 'obra' ? viewObra() : viewAll();
   v.scrollTop = st;
   if (state.view === 'calendar' && state.calMode === 'week') { const w = $('#weekScroll'); if (w) w.scrollTop = 7.5 * HOUR; }
   renderSidebar();
@@ -452,6 +455,7 @@ function openItem(id, occDate, preset) {
       '<div class="field"><label>Obra</label><input name="obra" list="obrasList" placeholder="Busca la obra…" autocomplete="off" value="' + esc(d.obra ? d.obra.nombre : '') + '"><datalist id="obrasList">' + (state.obras || []).map(o => '<option value="' + esc(o.nombre) + '">').join('') + '</datalist></div>' +
       '<div class="field"><label>Visibilidad</label><div class="toggle' + (d.privado ? ' on' : '') + '" data-act="toggle-priv"><span>Solo lo veo yo</span><i class="sw"></i></div></div>' : '') +
     '<div class="field full"><label>Notas</label><textarea name="notes" placeholder="Detalles, enlace de la videollamada, asistentes…">' + esc(d.notes || '') + '</textarea></div>' +
+    (SRV && id ? '<div class="field full"><label>Comentarios' + ((d.comentarios || []).length ? ' · ' + d.comentarios.length : '') + '</label><div class="coms">' + (d.comentarios || []).map(c => '<div class="nota">' + avHtml(c.autor, 'sm') + '<div><div class="nota-m"><b>' + esc(persona(c.autor).nombre) + '</b> · ' + esc(fmtFecha(c.fecha)) + '</div><div class="nota-t">' + esc(c.texto) + '</div></div></div>').join('') + '</div><div class="nota-form"><input name="comentario" placeholder="Escribe un comentario… (@nombre para avisar a alguien)" autocomplete="off"><button class="btn sm" data-act="comentar" data-id="' + id + '">Enviar</button></div></div>' : '') +
     '</div><div class="sheet-foot">' + (id ? '<button class="btn danger" data-act="sheet-del">' + ico('trash') + 'Eliminar</button>' : '') + '<span class="spacer"></span><span class="hint">Ctrl+Enter guarda</span><button class="btn" data-act="sheet-close">Cancelar</button><button class="btn primary" data-act="sheet-save">' + ico('check') + 'Guardar</button></div>';
   openSheet(html); setTimeout(() => { const i = $('#sheet .title-in'); if (i) { i.focus(); if (!id) i.select(); } }, 60);
 }
@@ -516,7 +520,8 @@ function openSettings() {
     '<div class="field full"><label>Datos</label><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" data-act="export-json">Copia de seguridad (.json)</button><button class="btn sm" data-act="import-json">Restaurar copia</button><button class="btn sm" data-act="export-ics">Exportar a Outlook / Google (.ics)</button></div><input type="file" id="importFile" accept=".json" class="hidden"></div>' +
     '<div class="field full"><label>Atajos</label><p class="hint"><code>N</code> añadir · <code>Ctrl+K</code> buscar · <code>Esc</code> cerrar · <code>Ctrl+Enter</code> guardar la ficha · <code>1</code>–<code>5</code> cambiar de vista</p></div>' +
     '<div class="field full"><label>Versión</label><p class="hint">' + APP_VERSION + ' · Si no ves la última, cierra la app y vuelve a abrirla (o pulsa F5).</p></div>' +
-    (SRV ? '<div class="field full"><label>Cuenta</label><p class="hint">Conectado como <b>' + esc(SRV.nombre) + '</b> en proyecton.es' + (SRV.lectura ? ' · solo lectura' : '') + (SRV.admin ? ' · administrador' : '') + ' · <a href="' + esc(SRV.salir || '../salir.php') + '">Salir</a></p></div>' : '') +
+    (SRV ? '<div class="field full"><label>Calendario del móvil y Outlook</label><div id="icsBox">' + (state.icsUrl ? '<input readonly value="' + esc(state.icsUrl) + '"><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn sm primary" data-act="ics-copiar">Copiar la dirección</button><a class="btn sm" href="' + esc(state.icsWebcal || state.icsUrl) + '">Abrir en el calendario</a><button class="btn sm ghost" data-act="ics-renovar">Renovar</button></div>' : '<button class="btn sm primary" data-act="ics-obtener">Obtener mi dirección de calendario</button>') + '</div><p class="hint" style="margin-top:6px">Suscríbete una vez y tus reuniones y tareas con fecha salen en el calendario de siempre, con sus avisos, aunque Clanedario esté cerrado. <b>iPhone:</b> Ajustes → Apps → Calendario → Cuentas → Añadir cuenta → Otro → Añadir calendario suscrito, y pega la dirección. <b>Android / Google:</b> en el ordenador, Google Calendar → Otros calendarios → + → Desde URL (Google tarda horas en refrescar). <b>Outlook:</b> Añadir calendario → Suscribirse desde la web. La dirección es personal: no la compartas.</p></div>' +
+      '<div class="field full"><label>Cuenta</label><p class="hint">Conectado como <b>' + esc(SRV.nombre) + '</b> en proyecton.es' + (SRV.lectura ? ' · solo lectura' : '') + (SRV.admin ? ' · administrador' : '') + ' · <a href="' + esc(SRV.salir || '../salir.php') + '">Salir</a></p></div>' : '') +
     '</div><div class="sheet-foot"><span class="spacer"></span><button class="btn primary" data-act="settings-save">Guardar</button></div>');
 }
 function download(name, text, type) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: type || 'application/octet-stream' })); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800); }
@@ -657,7 +662,14 @@ function onAction(e) {
     case 'quien': state.quien = el.dataset.u === YO ? 'yo' : el.dataset.u; render(); break;
     case 'asignar': openItem(null, null, { date: todayYmd(), para: el.dataset.u === YO ? [] : [el.dataset.u] }); break;
     case 'ver-de': state.quien = el.dataset.u === YO ? 'yo' : el.dataset.u; go(el.dataset.view, null, el.dataset.filter || null); break;
-    case 'obra-sel': state.obraSel = state.obraSel === el.dataset.id ? null : el.dataset.id; render(); break;
+    case 'obra-sel': abrirObra(el.dataset.id); break;
+    case 'obra-nota': { const ta = $('#notaTxt'); const txt = ta ? ta.value.trim() : ''; if (!txt) { if (ta) ta.focus(); break; } srvFetch('obra-nota', { obra: el.dataset.id, texto: txt }).then(r => { if (state.obraDet && state.obraDet.id === el.dataset.id) state.obraDet.notas = r.notas || []; render(); toast('Anotado en el diario', txt.slice(0, 60), 'ok', 1800); }).catch(srvFallo); break; }
+    case 'obra-sugerir': { const ob = obraDe(el.dataset.id); const p = ob ? buscaPersona(ob.autor) : null; const it = newItem({ title: el.dataset.t, date: todayYmd(), list: 'trabajo', obra: ob ? { id: ob.id, nombre: ob.nombre } : null, para: p && p.usuario !== YO ? [p.usuario] : [] }); state.items.push(it); save(); render(); toast('Tarea añadida', it.title, 'ok', 1800); break; }
+    case 'comentar': { const inp = $('#sheet [name="comentario"]'); const txt = inp ? inp.value.trim() : ''; if (!txt) { if (inp) inp.focus(); break; } const occD2 = sheetState ? sheetState.occ : null; srvFetch('comentar', { id: id, texto: txt }).then(r => { const it = byId(id); const n = normSrvItem(r.item); if (it) Object.assign(it, n); else state.items.push(n); srvSent[id] = JSON.stringify(it || n); if (r.ahora) state.srvDesde = r.ahora; saveCache(); openItem(id, occD2); render(); }).catch(srvFallo); break; }
+    case 'novedades-visto': state.settings.vistoHasta = state.srvDesde || ''; save(); closeSheet(); renderSidebar(); break;
+    case 'ics-obtener': srvFetch('ics-url').then(r => { state.icsUrl = r.url; state.icsWebcal = r.webcal; openSettings(); }).catch(srvFallo); break;
+    case 'ics-renovar': if (confirm('Se anulará la dirección anterior: habrá que volver a suscribirse en el móvil u Outlook. ¿Seguir?')) srvFetch('ics-renovar').then(r => { state.icsUrl = r.url; state.icsWebcal = r.webcal; openSettings(); toast('Dirección renovada', 'La anterior ya no vale', 'ok'); }).catch(srvFallo); break;
+    case 'ics-copiar': { const i = $('#icsBox input'); if (i) { i.select(); try { navigator.clipboard.writeText(i.value); } catch (e) { document.execCommand('copy'); } toast('Copiada', 'Pégala en tu calendario como calendario suscrito', 'ok'); } break; }
     case 'obra-nueva': { const ob = (state.obras || []).find(o => o.id === el.dataset.id); openItem(null, null, Object.assign({ date: todayYmd(), obra: ob ? { id: ob.id, nombre: ob.nombre } : null }, el.dataset.type === 'event' ? { type: 'event', time: nextHour(), end: addMin(nextHour(), 60), reminder: 15, list: evList } : {})); break; }
     case 'obras-recargar': state.obras = null; render(); srvObras(true); break;
     case 'obras-estado': state.obraEstado = el.dataset.v; render(); break;
@@ -712,7 +724,8 @@ async function init() {
   }
   $('#addList').addEventListener('click', () => openListSheet(null));
   $('#themeBtn').addEventListener('click', () => { state.settings.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; save(); applyTheme(); });
-  $('#notifBtn').addEventListener('click', askNotif);
+  $('#notifBtn').addEventListener('click', SRV ? openNovedades : askNotif);
+  if (SRV) $('#notifBtn').title = 'Novedades del equipo';
   $('#settingsBtn').addEventListener('click', openSettings);
   $('#searchBtn').addEventListener('click', openSearch);
   $('#newBtn').addEventListener('click', () => openItem(null, null, { date: state.view === 'calendar' ? state.sel : todayYmd(), list: state.view === 'list' ? state.listId : 'inbox' }));
@@ -747,6 +760,63 @@ async function init() {
   window.addEventListener('storage', e => { if (e.key === KEY && !sheetState) { load(); render(); } });
   window.addEventListener('error', e => toast('Error en la app', e.message, 'info', 6000));
 }
+/* ===== modo empresa: ficha de obra, comentarios, novedades ===== */
+const SUGERENCIAS = {
+  borrador: ['Visitar el edificio y tomar medidas', 'Pedir precios a proveedores', 'Revisar el presupuesto antes de enviarlo'],
+  enviada: ['Llamar a la administración para confirmar que lo han recibido', 'Preparar la presentación para la junta', 'Resolver dudas del administrador o del técnico'],
+  aceptada: ['Firmar el contrato', 'Pedir la licencia y tramitar las tasas', 'Planificar el inicio de obra', 'Solicitar las ayudas'],
+  perdida: ['Preguntar el motivo y anotarlo en el diario']
+};
+function fmtFecha(s) { if (!s) return ''; const d = s.slice(0, 10), h = s.slice(11, 16); return (d === todayYmd() ? 'Hoy' : relDay(d)) + (h ? ' ' + h : ''); }
+function obraDe(id) { return (state.obras || []).find(o => o.id === id) || null; }
+async function abrirObra(id) {
+  state.obraId = id; state.obraDet = null; go('obra');
+  try { const d = await srvFetch('obra&id=' + encodeURIComponent(id)); state.obraDet = { id: id, datos: (d.obra && d.obra.datos) || {}, extra: (d.obra && d.obra.extra) || {}, notas: d.notas || [] }; }
+  catch (e) { state.obraDet = { id: id, datos: {}, extra: {}, notas: [] }; srvFallo(e); }
+  if (state.view === 'obra' && state.obraId === id) render();
+}
+function viewObra() {
+  const o = obraDe(state.obraId); if (!o) return '<div class="empty"><b>?</b>Esta obra ya no está en la lista <button class="btn sm" data-act="go" data-view="obras">Volver a Obras</button></div>';
+  const det = state.obraDet; const its = state.items.filter(it => it.obra && it.obra.id === o.id);
+  const pend = its.filter(it => isRep(it) || !it.done).map(it => occ(it, nextOcc(it))).sort(sortList);
+  const done = its.filter(it => !isRep(it) && it.done).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
+  const maps = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([o.dir, o.municipio].filter(Boolean).join(', '));
+  const ETQ = { dir: 'Dirección', municipio: 'Municipio', viviendas: 'Viviendas', plantas: 'Plantas', estado: 'Estado', exp: 'Código', autor: 'Autor', fase: 'Fase', com: 'Comunidad', updated_at: 'Actualizada', created_at: 'Creada', gg: 'GG %', bi: 'BI %', iva: 'IVA %', anno: 'Año', ano: 'Año', locales: 'Locales (m²)' };
+  let html = '<div class="hero"><div><div class="eyebrow"><span data-act="go" data-view="obras" style="cursor:pointer">← Obras</span> · ' + (OBRA_ESTADOS[o.estado] || esc(o.estado) || '—') + '</div><h1>' + esc(o.nombre) + (o.exp ? ' <span class="pill">' + esc(o.exp) + '</span>' : '') + '</h1><p class="sub">' + esc([o.dir, o.municipio, o.viviendas ? o.viviendas + ' viviendas' : '', o.autor ? 'la lleva ' + o.autor : ''].filter(Boolean).join(' · ')) + '</p></div>' +
+    '<div class="kpis"><div class="kpi blue" data-act="obra-nueva" data-id="' + esc(o.id) + '">' + ico('plus') + 'Tarea</div><div class="kpi purple" data-act="obra-nueva" data-id="' + esc(o.id) + '" data-type="event">' + ico('users') + 'Reunión</div>' + (APPS.length ? '<a class="kpi" href="' + esc(APPS[0].url) + '" target="_blank" rel="noopener">Abrir en Prestón</a>' : '') + '<a class="kpi" href="' + maps + '" target="_blank" rel="noopener">' + ico('pin') + 'Mapa</a></div></div>';
+  html += '<div class="grid2"><section class="card"><div class="card-head"><h2>Tareas y reuniones <span class="n">' + pend.length + '</span></h2></div>' + (pend.length ? pend.map(x => rowHtml(x)).join('') : '<div class="empty">Nada pendiente en esta obra</div>') +
+    (done.length ? '<div class="group-title">Hechas <span>' + done.length + '</span></div>' + done.slice(0, 10).map(it => rowHtml(occ(it, it.date))).join('') : '') +
+    '<div class="group-title">Sugerencias para esta fase</div>' + (SUGERENCIAS[o.estado] || ['Apuntar el siguiente paso']).map(s => '<div class="row"><span class="chk" style="border-style:dashed;opacity:.6"></span><div class="row-body"><div class="row-title" style="font-weight:500">' + esc(s) + '</div></div><button class="btn sm ghost" data-act="obra-sugerir" data-id="' + esc(o.id) + '" data-t="' + esc(s) + '">' + ico('plus') + 'Añadir</button></div>').join('') + '</section>';
+  html += '<section class="card"><div class="card-head"><h2>Diario de obra <span class="n">' + (det ? det.notas.length : '…') + '</span></h2></div><div class="nota-form"><textarea id="notaTxt" placeholder="Apunta una llamada, una visita, un acuerdo… (queda con tu nombre y la hora)"></textarea><button class="btn primary sm" data-act="obra-nota" data-id="' + esc(o.id) + '">' + ico('plus') + 'Anotar</button></div>' +
+    (det ? (det.notas.length ? det.notas.map(n => '<div class="nota">' + avHtml(n.autor, 'sm') + '<div><div class="nota-m"><b>' + esc(persona(n.autor).nombre) + '</b> · ' + esc(fmtFecha(n.fecha)) + '</div><div class="nota-t">' + esc(n.texto) + '</div></div></div>').join('') : '<div class="empty">Sin apuntes todavía</div>') : '<div class="empty">Cargando…</div>') + '</section></div>';
+  if (det) { const filas = Object.assign({}, det.datos, det.extra); const keys = Object.keys(filas).filter(k => k !== 'nombre' && k !== 'id' && k !== 'wizard'); if (keys.length) html += '<section class="card" style="margin-top:12px"><div class="card-head"><h2>Datos de Prestón</h2><span class="hint">solo lectura</span></div><div class="datos-grid">' + keys.map(k => '<div><span>' + esc(ETQ[k] || k) + '</span><b>' + esc(filas[k]) + '</b></div>').join('') + '</div></section>'; }
+  return html;
+}
+function novedades() {
+  if (!SRV) return [];
+  const desde = state.settings.vistoHasta || ''; const out = [];
+  state.items.forEach(it => {
+    if (!it.actualizado || it.actualizado <= desde) return;
+    const por = it.actualizadoPor || ''; if (por === YO || por === '') return;
+    const coms = it.comentarios || []; const ult = coms.length ? coms[coms.length - 1] : null;
+    const hayCom = ult && ult.autor !== YO && ult.fecha > desde;
+    const meMenciona = hayCom && norm(ult.texto).indexOf('@' + YO) >= 0;
+    if (!esMio(it) && !meMenciona) return;
+    let tipo = 'cambio';
+    if (hayCom) tipo = 'comentario'; else if (por === 'sistema') tipo = 'sistema'; else if (it.autor !== YO && (it.para || []).includes(YO) && (it.rev || 0) <= 2) tipo = 'asignada';
+    out.push({ it: it, tipo: tipo, quien: tipo === 'comentario' ? ult.autor : por, fecha: tipo === 'comentario' ? ult.fecha : it.actualizado, texto: tipo === 'comentario' ? ult.texto : '' });
+  });
+  return out.sort((a, b) => a.fecha < b.fecha ? 1 : -1);
+}
+function openNovedades() {
+  const n = novedades();
+  openSheet('<div class="sheet-head"><h2>Novedades</h2><button class="icon-btn" data-act="sheet-close">' + ico('x') + '</button></div>' +
+    (n.length ? n.map(x => { const sis = x.quien === 'sistema' || !x.quien; const q = sis ? 'Clanedario' : persona(x.quien).nombre; const verbo = x.tipo === 'comentario' ? 'comentó en' : x.tipo === 'asignada' ? 'te asignó' : x.tipo === 'sistema' ? 'creó sola' : 'cambió';
+      return '<div class="row" data-id="' + x.it.id + '" data-occ="' + (x.it.date || '') + '">' + (sis ? '<span class="av sm all">' + ico('repeat') + '</span>' : avHtml(x.quien, 'sm')) + '<div class="row-body" data-act="open"><div class="row-title"><b>' + esc(q) + '</b> ' + verbo + ': ' + esc(x.it.title) + '</div><div class="row-meta">' + esc(fmtFecha(x.fecha)) + (x.texto ? ' · «' + esc(x.texto.slice(0, 80)) + '»' : '') + (x.it.obra && x.it.obra.nombre ? ' · ' + esc(x.it.obra.nombre) : '') + '</div></div></div>'; }).join('')
+      : '<div class="empty"><b>✓</b>Nada nuevo desde la última vez</div>') +
+    '<div class="sheet-foot"><span class="hint">Lo que te asignan, te comentan o cambian tus compañeros</span><span class="spacer"></span><button class="btn" data-act="novedades-visto">Marcar todo como visto</button></div>');
+}
+
 /* ===== modo empresa: sincronización con proyecton.es (api.php) ===== */
 const API = 'api.php';
 let srvSent = {}, srvListsSent = '', srvAjSent = '', srvTimer = null, srvBusy = false, srvPendiente = false, srvOk = true, srvAvisoLectura = 0;
@@ -803,7 +873,7 @@ async function srvFlush() {
     const vivos = new Set(state.items.map(it => it.id)); const borrados = Object.keys(srvSent).filter(id => !vivos.has(id));
     if (cambiados.length) {
       const r = await srvFetch('guardar', { items: cambiados });
-      (r.items || []).forEach(x => { const it = byId(x.id); if (it) { it.rev = x.rev; it.actualizado = x.actualizado; if (x.autor) it.autor = x.autor; srvSent[it.id] = JSON.stringify(it); } });
+      (r.items || []).forEach(x => { const it = byId(x.id); if (it) { it.rev = x.rev; it.actualizado = x.actualizado; it.actualizadoPor = YO; if (x.autor) it.autor = x.autor; srvSent[it.id] = JSON.stringify(it); } });
       if (r.rechazados && r.rechazados.length) toast('Sin permiso', 'Alguna tarea de otra persona no se ha podido cambiar', 'info');
       if (r.ahora) state.srvDesde = r.ahora;
       saveCache();
@@ -826,9 +896,13 @@ async function srvLatido() {
       if (x.borrado) { if (loc && !sucio) { state.items = state.items.filter(i => i.id !== x.id); delete srvSent[x.id]; tocado = true; } return; }
       if (loc && sucio) return;
       if (loc && (loc.rev || 0) >= (x.rev || 0)) return;
-      const n = normSrvItem(x);
+      const n = normSrvItem(x); const comsAntes = loc ? (loc.comentarios || []).length : 0;
       if (loc) Object.assign(loc, n); else state.items.push(n);
       srvSent[x.id] = JSON.stringify(loc || n); tocado = true;
+      const coms = n.comentarios || []; const ult = coms.length ? coms[coms.length - 1] : null;
+      if (!loc && esMio(n) && n.autor !== YO && n.autor !== 'sistema') { toast(persona(n.autor).nombre + ' te ha asignado', n.title, 'info', 6000); chime('done'); }
+      else if (!loc && n.actualizadoPor === 'sistema' && esMio(n)) toast('Seguimiento creado solo', n.title, 'info', 6000);
+      else if (coms.length > comsAntes && ult && ult.autor !== YO && (esMio(n) || norm(ult.texto).includes('@' + YO))) { toast(persona(ult.autor).nombre + ' comentó en «' + n.title.slice(0, 40) + '»', ult.texto.slice(0, 90), 'info', 6000); chime('done'); }
     });
     if (d.ahora) state.srvDesde = d.ahora;
     srvBien();
