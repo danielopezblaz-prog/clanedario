@@ -464,6 +464,44 @@ h2 .n{color:var(--muted);font-weight:600;font-size:13px}
 .icon-btn[data-n]:not([data-n=""])::after{content:attr(data-n);position:absolute;top:1px;right:1px;min-width:16px;height:16px;border-radius:8px;background:var(--red);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 4px;line-height:1}
 .kpis a.kpi{text-decoration:none}
 #icsBox input{width:100%;height:36px;border-radius:10px;border:1px solid var(--sep);background:var(--fill);padding:0 10px;font-size:12px}
+/* tablero por fases */
+.tablero{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:start}
+.tcol{background:var(--card);border-radius:14px;padding:8px;min-height:220px;box-shadow:var(--shadow);border:2px dashed transparent}
+.tcol.drop{border-color:var(--blue)}
+.tcol-h{font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);padding:2px 4px 8px;display:flex;justify-content:space-between}
+.tcard{background:var(--card-solid);border-radius:10px;padding:8px 10px;margin-bottom:6px;box-shadow:var(--shadow);cursor:grab}
+.tcard[draggable="false"]{cursor:pointer}
+.tc-t{font-weight:600;font-size:13px}
+.tc-m{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px;font-size:11px;color:var(--muted)}
+.tc-d{margin-left:auto}
+/* semana del equipo */
+.semana{overflow:auto;background:var(--card);border-radius:var(--r);box-shadow:var(--shadow)}
+.semana table{border-collapse:collapse;width:100%;min-width:760px}
+.semana th,.semana td{border:1px solid var(--sep);padding:4px 6px;vertical-align:top;font-size:11.5px;min-width:110px}
+.semana thead th{text-align:left;position:sticky;top:0;background:var(--card-solid);z-index:1;white-space:nowrap}
+.semana tbody th{width:64px;min-width:64px;text-align:left;background:var(--card-solid);white-space:nowrap}
+.semana tr.hoy th{color:var(--blue)}
+.semana tr.hoy td{background:color-mix(in srgb,var(--blue) 5%,transparent)}
+.sm-it{padding:2px 5px;border-radius:6px;background:var(--fill);margin:2px 0;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.sm-it.ev{background:color-mix(in srgb,var(--blue) 15%,transparent)}
+.sm-it.done{opacity:.45;text-decoration:line-through}
+/* panel */
+.barra{display:flex;gap:10px;align-items:center;padding:6px 4px;cursor:pointer}
+.b-body{flex:1;min-width:0}
+.b-h{display:flex;justify-content:space-between;font-size:12px;gap:8px}
+.b-h span{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b-track{height:8px;border-radius:8px;background:var(--fill);overflow:hidden;margin-top:4px}
+.b-track i{display:block;height:100%;background:var(--blue);border-radius:8px;min-width:2px}
+.b-n{width:28px;text-align:right}
+/* adjuntos */
+.adj-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.adj-it{position:relative;display:flex;flex-direction:column;width:92px;text-decoration:none;color:inherit;font-size:10.5px}
+.adj-it img{width:92px;height:70px;object-fit:cover;border-radius:8px;background:var(--fill)}
+.adj-doc{width:92px;height:70px;border-radius:8px;background:var(--fill);display:grid;place-items:center;font-weight:800;color:var(--muted);font-size:12px}
+.adj-n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.adj-x{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:13px;line-height:1;display:grid;place-items:center}
+label.btn input{display:none}
+.row.crm .row-title a{color:var(--blue);text-decoration:none}
 
 /* barra inferior (móvil) y hoja «Más» */
 .tabbar{display:none}
@@ -528,4 +566,5 @@ h2 .n{color:var(--muted);font-weight:600;font-size:13px}
   .search{width:100%;max-width:100%}
   .toasts{left:12px;right:12px;bottom:calc(74px + env(safe-area-inset-bottom));width:auto}
   .list-head h1{font-size:20px}
+  .tablero{grid-template-columns:minmax(0,1fr)}
 }

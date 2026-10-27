@@ -10,7 +10,7 @@ const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 
 const MONTHS_S = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const COLORS = ['#007AFF', '#AF52DE', '#34C759', '#FF9500', '#FF3B30', '#5AC8FA', '#FF2D55', '#5856D6', '#FFCC00', '#8E8E93'];
 const HOUR = 52;
-const APP_VERSION = '27-10-2026 · 7';
+const APP_VERSION = '27-10-2026 · 8';
 /* Modo empresa: index.php de proyecton.es inyecta CLAN_USUARIO (quién soy) y CLAN_APPS (lanzador). Sin eso, app personal. */
 const SRV = (window.CLAN_USUARIO && window.CLAN_USUARIO.usuario) ? window.CLAN_USUARIO : null;
 const YO = SRV ? SRV.usuario : '';
@@ -215,6 +215,7 @@ function viewToday() {
   let any = false;
   for (let i = 1; i <= 7; i++) { const d = addDays(t, i); const its = itemsOn(d).filter(o => !o.isDone); if (!its.length) continue; any = true; html += '<div class="dh">' + relDay(d) + ' <span>' + fmtShort(d) + '</span></div>' + its.map(o => rowHtml(o, { noDate: true })).join(''); }
   if (!any) html += '<div class="empty">Nada en los próximos 7 días</div>';
+  if (SRV) { const cm = crmMias(); const l = cm.hoy.concat(cm.nuevas).slice(0, 6); if (l.length) html += '<div class="group-title">Captación <span>' + (cm.hoy.length + cm.nuevas.length) + '</span></div>' + crmRows(l) + '<button class="btn sm ghost" data-act="go" data-view="captacion">Ver todo</button>'; }
   return html + '</section></div>';
 }
 function viewUpcoming() {
@@ -232,7 +233,7 @@ function viewUpcoming() {
 function monthStart(s) { const d = fromYmd(s); d.setDate(1); const dow = (d.getDay() + 6) % 7; d.setDate(d.getDate() - dow); return ymd(d); }
 function weekStart(s) { const d = fromYmd(s); const dow = (d.getDay() + 6) % 7; d.setDate(d.getDate() - dow); return ymd(d); }
 function shiftMonth(s, n) { const d = fromYmd(s); d.setDate(1); d.setMonth(d.getMonth() + n); return ymd(d); }
-function shiftCal(n) { state.cursor = state.calMode === 'month' ? shiftMonth(state.cursor, n) : addDays(state.cursor, 7 * n); render(); }
+function shiftCal(n) { state.cursor = (state.calMode === 'month' && state.view !== 'semana') ? shiftMonth(state.cursor, n) : addDays(state.cursor, 7 * n); render(); }
 function weekTitle() { const a = weekStart(state.cursor), b = addDays(a, 6); const da = fromYmd(a), db = fromYmd(b); return da.getDate() + (da.getMonth() !== db.getMonth() ? ' ' + MONTHS_S[da.getMonth()] : '') + ' – ' + db.getDate() + ' ' + MONTHS_S[db.getMonth()] + ' ' + db.getFullYear(); }
 function viewCalendar() {
   const c = fromYmd(state.cursor); const title = state.calMode === 'month' ? cap(MONTHS[c.getMonth()]) + ' ' + c.getFullYear() : weekTitle();
@@ -271,12 +272,14 @@ function dayPanelHtml(d) {
     '<div style="margin-top:10px;display:flex;gap:6px"><button class="btn sm" data-act="new-on" data-date="' + d + '">' + ico('plus') + 'Tarea</button><button class="btn sm" data-act="new-on" data-date="' + d + '" data-type="event" data-list="' + ev + '">' + ico('users') + 'Reunión</button></div></aside>';
 }
 function setupDnD(root) {
-  root.addEventListener('dragstart', e => { const el = e.target.closest('[data-id]'); if (!el) return; e.dataTransfer.setData('text/plain', el.dataset.id + '|' + (el.dataset.occ || '')); e.dataTransfer.effectAllowed = 'move'; });
-  root.addEventListener('dragover', e => { const cell = e.target.closest('[data-date]'); if (!cell) return; e.preventDefault(); cell.classList.add('drop'); });
-  root.addEventListener('dragleave', e => { const cell = e.target.closest('[data-date]'); if (cell) cell.classList.remove('drop'); });
+  root.addEventListener('dragstart', e => { const ob = e.target.closest('[data-obra]'); if (ob) { e.dataTransfer.setData('text/plain', 'obra|' + ob.dataset.obra); e.dataTransfer.effectAllowed = 'move'; return; } const el = e.target.closest('[data-id]'); if (!el) return; e.dataTransfer.setData('text/plain', el.dataset.id + '|' + (el.dataset.occ || '')); e.dataTransfer.effectAllowed = 'move'; });
+  root.addEventListener('dragover', e => { const cell = e.target.closest('[data-date],[data-fase]'); if (!cell) return; e.preventDefault(); cell.classList.add('drop'); });
+  root.addEventListener('dragleave', e => { const cell = e.target.closest('[data-date],[data-fase]'); if (cell) cell.classList.remove('drop'); });
   root.addEventListener('drop', e => {
+    const col = e.target.closest('[data-fase]'); const datos = e.dataTransfer.getData('text/plain') || '';
+    if (col) { e.preventDefault(); col.classList.remove('drop'); if (datos.indexOf('obra|') !== 0) return; moverFase(datos.slice(5), col.dataset.fase); return; }
     const cell = e.target.closest('[data-date]'); if (!cell) return; e.preventDefault(); cell.classList.remove('drop');
-    const p = (e.dataTransfer.getData('text/plain') || '').split('|'); const it = byId(p[0]); if (!it || it.date === cell.dataset.date) return;
+    const p = datos.split('|'); const it = byId(p[0]); if (!it || it.date === cell.dataset.date) return;
     if (isRep(it)) { toast('Es una repetición', 'Cambia la fecha desde la ficha para mover toda la serie', 'info'); return; }
     it.date = cell.dataset.date; it.updated = Date.now(); clearFired(it.id); save(); render(); toast('Movido a ' + relDay(it.date), it.title, 'ok', 2000);
   });
@@ -391,7 +394,7 @@ function renderNextUp() {
 }
 function render() {
   const v = $('#view'); const st = v.scrollTop;
-  v.innerHTML = state.view === 'today' ? viewToday() : state.view === 'upcoming' ? viewUpcoming() : state.view === 'calendar' ? viewCalendar() : state.view === 'list' ? viewList() : state.view === 'done' ? viewDone() : state.view === 'equipo' ? viewEquipo() : state.view === 'obras' ? viewObras() : state.view === 'obra' ? viewObra() : viewAll();
+  v.innerHTML = state.view === 'today' ? viewToday() : state.view === 'upcoming' ? viewUpcoming() : state.view === 'calendar' ? viewCalendar() : state.view === 'list' ? viewList() : state.view === 'done' ? viewDone() : state.view === 'equipo' ? viewEquipo() : state.view === 'obras' ? viewObras() : state.view === 'obra' ? viewObra() : state.view === 'tablero' ? viewTablero() : state.view === 'semana' ? viewSemana() : state.view === 'panel' ? viewPanel() : state.view === 'captacion' ? viewCaptacion() : viewAll();
   v.scrollTop = st;
   if (state.view === 'calendar' && state.calMode === 'week') { const w = $('#weekScroll'); if (w) w.scrollTop = 7.5 * HOUR; }
   renderSidebar();
@@ -455,9 +458,11 @@ function openItem(id, occDate, preset) {
       '<div class="field"><label>Obra</label><input name="obra" list="obrasList" placeholder="Busca la obra…" autocomplete="off" value="' + esc(d.obra ? d.obra.nombre : '') + '"><datalist id="obrasList">' + (state.obras || []).map(o => '<option value="' + esc(o.nombre) + '">').join('') + '</datalist></div>' +
       '<div class="field"><label>Visibilidad</label><div class="toggle' + (d.privado ? ' on' : '') + '" data-act="toggle-priv"><span>Solo lo veo yo</span><i class="sw"></i></div></div>' : '') +
     '<div class="field full"><label>Notas</label><textarea name="notes" placeholder="Detalles, enlace de la videollamada, asistentes…">' + esc(d.notes || '') + '</textarea></div>' +
+    (SRV && id ? '<div class="field full"><label>Fotos y documentos</label><div data-adj-box="item:' + id + '">' + adjHtml({ item: id }) + '</div></div>' : '') +
     (SRV && id ? '<div class="field full"><label>Comentarios' + ((d.comentarios || []).length ? ' · ' + d.comentarios.length : '') + '</label><div class="coms">' + (d.comentarios || []).map(c => '<div class="nota">' + avHtml(c.autor, 'sm') + '<div><div class="nota-m"><b>' + esc(persona(c.autor).nombre) + '</b> · ' + esc(fmtFecha(c.fecha)) + '</div><div class="nota-t">' + esc(c.texto) + '</div></div></div>').join('') + '</div><div class="nota-form"><input name="comentario" placeholder="Escribe un comentario… (@nombre para avisar a alguien)" autocomplete="off"><button class="btn sm" data-act="comentar" data-id="' + id + '">Enviar</button></div></div>' : '') +
     '</div><div class="sheet-foot">' + (id ? '<button class="btn danger" data-act="sheet-del">' + ico('trash') + 'Eliminar</button>' : '') + '<span class="spacer"></span><span class="hint">Ctrl+Enter guarda</span><button class="btn" data-act="sheet-close">Cancelar</button><button class="btn primary" data-act="sheet-save">' + ico('check') + 'Guardar</button></div>';
   openSheet(html); setTimeout(() => { const i = $('#sheet .title-in'); if (i) { i.focus(); if (!id) i.select(); } }, 60);
+  if (SRV && id && adjCache['i:' + id] === undefined) cargarAdjuntos({ item: id }).then(() => refrescarAdjuntos('item', id));
 }
 function readSheet() {
   const d = sheetState.draft; const f = n => $('#sheet [name="' + n + '"]');
@@ -667,12 +672,16 @@ function onAction(e) {
     case 'obra-sugerir': { const ob = obraDe(el.dataset.id); const p = ob ? buscaPersona(ob.autor) : null; const it = newItem({ title: el.dataset.t, date: todayYmd(), list: 'trabajo', obra: ob ? { id: ob.id, nombre: ob.nombre } : null, para: p && p.usuario !== YO ? [p.usuario] : [] }); state.items.push(it); save(); render(); toast('Tarea añadida', it.title, 'ok', 1800); break; }
     case 'comentar': { const inp = $('#sheet [name="comentario"]'); const txt = inp ? inp.value.trim() : ''; if (!txt) { if (inp) inp.focus(); break; } const occD2 = sheetState ? sheetState.occ : null; srvFetch('comentar', { id: id, texto: txt }).then(r => { const it = byId(id); const n = normSrvItem(r.item); if (it) Object.assign(it, n); else state.items.push(n); srvSent[id] = JSON.stringify(it || n); if (r.ahora) state.srvDesde = r.ahora; saveCache(); openItem(id, occD2); render(); }).catch(srvFallo); break; }
     case 'novedades-visto': state.settings.vistoHasta = state.srvDesde || ''; save(); closeSheet(); renderSidebar(); break;
+    case 'crm-recargar': srvCrm(true); toast('Actualizando', 'Leyendo el CRM de captación', 'info', 1500); break;
+    case 'crm-hecha': { const s = ((state.crm && state.crm.solicitudes) || []).find(x => String(x.id) === el.dataset.crm); if (!s) break; const txt = prompt('¿Qué se ha hecho? Queda como nota en el CRM.', s.proxima_txt ? 'Hecho: ' + s.proxima_txt : 'Hecho'); if (txt === null) break; crmPost('nota', { id: s.id, texto: txt.trim() + ' (desde Clanedario)' }).then(() => crmPost('guardar', { id: s.id, campos: { proxima: '', proxima_txt: '' } })).then(() => { s.proxima = ''; s.proxima_txt = ''; render(); toast('Anotado en el CRM', s.nombre || '', 'ok'); }).catch(e2 => toast('No se pudo anotar en el CRM', String((e2 && e2.message) || e2), 'info', 5000)); break; }
+    case 'adj-borrar': { e.preventDefault(); e.stopPropagation(); if (!confirm('¿Quitar este archivo?')) break; const k = el.dataset.k, v = el.dataset.v; srvFetch('adjunto-borrar', { id: el.dataset.adj }).then(r => { adjCache[k === 'item' ? 'i:' + v : 'o:' + v] = r.adjuntos || []; refrescarAdjuntos(k, v); }).catch(srvFallo); break; }
     case 'ics-obtener': srvFetch('ics-url').then(r => { state.icsUrl = r.url; state.icsWebcal = r.webcal; openSettings(); }).catch(srvFallo); break;
     case 'ics-renovar': if (confirm('Se anulará la dirección anterior: habrá que volver a suscribirse en el móvil u Outlook. ¿Seguir?')) srvFetch('ics-renovar').then(r => { state.icsUrl = r.url; state.icsWebcal = r.webcal; openSettings(); toast('Dirección renovada', 'La anterior ya no vale', 'ok'); }).catch(srvFallo); break;
     case 'ics-copiar': { const i = $('#icsBox input'); if (i) { i.select(); try { navigator.clipboard.writeText(i.value); } catch (e) { document.execCommand('copy'); } toast('Copiada', 'Pégala en tu calendario como calendario suscrito', 'ok'); } break; }
     case 'obra-nueva': { const ob = (state.obras || []).find(o => o.id === el.dataset.id); openItem(null, null, Object.assign({ date: todayYmd(), obra: ob ? { id: ob.id, nombre: ob.nombre } : null }, el.dataset.type === 'event' ? { type: 'event', time: nextHour(), end: addMin(nextHour(), 60), reminder: 15, list: evList } : {})); break; }
     case 'obras-recargar': state.obras = null; render(); srvObras(true); break;
     case 'obras-estado': state.obraEstado = el.dataset.v; render(); break;
+    case 'obras-ir': state.obraEstado = el.dataset.v; go('obras'); break;
     case 'toggle-priv': el.classList.toggle('on'); break;
     case 'more': openMoreSheet(); break;
     case 'more-go': closeSheet(); if (el.dataset.v === 'search') openSearch(); else if (el.dataset.v === 'theme') $('#themeBtn').click(); else if (el.dataset.v === 'settings') openSettings(); else go(el.dataset.v); break;
@@ -682,7 +691,7 @@ function onAction(e) {
 }
 function openMoreSheet() {
   const dark = document.documentElement.dataset.theme === 'dark';
-  const items = (SRV ? [['equipo', 'Equipo', 'users', 'var(--orange)'], ['obras', 'Obras', 'pin', '#B8251B']] : []).concat([['done', 'Completadas', 'done', 'var(--green)'], ['search', 'Buscar', 'search', 'var(--blue)'], ['theme', dark ? 'Tema claro' : 'Tema oscuro', dark ? 'sun' : 'moon', 'var(--indigo)'], ['settings', 'Ajustes', 'gear', 'var(--gray)']]);
+  const items = (SRV ? [['equipo', 'Equipo', 'users', 'var(--orange)'], ['semana', 'Semana del equipo', 'grid', 'var(--purple)'], ['obras', 'Obras', 'pin', '#B8251B'], ['tablero', 'Tablero', 'list', '#8E1F17'], ['captacion', 'Captación', 'bell', '#2A78D6'], ['panel', 'Panel', 'next', '#1A1A1A']] : []).concat([['done', 'Completadas', 'done', 'var(--green)'], ['search', 'Buscar', 'search', 'var(--blue)'], ['theme', dark ? 'Tema claro' : 'Tema oscuro', dark ? 'sun' : 'moon', 'var(--indigo)'], ['settings', 'Ajustes', 'gear', 'var(--gray)']]);
   openSheet('<div class="sheet-head"><h2>Más</h2><button class="icon-btn" data-act="sheet-close">' + ico('x') + '</button></div>' +
     '<div class="more-grid">' + items.map(x => '<button data-act="more-go" data-v="' + x[0] + '"><span class="nav-ic" style="background:' + x[3] + '">' + ico(x[2]) + '</span><span>' + x[1] + '</span></button>').join('') + '</div>' +
     '<div class="group-title">Mis listas <button class="btn sm ghost" data-act="more-newlist">' + ico('plus') + 'Nueva</button></div><div class="more-lists">' +
@@ -742,7 +751,7 @@ async function init() {
     $$('button', sb.parentNode).forEach(b => b.classList.toggle('on', b === sb));
     if (sb.parentNode.dataset.seg === 'type' && sb.dataset.v === 'event') { const r = $('#sheet [name="reminder"]'); if (r && r.value === '') r.value = '15'; const tm = $('#sheet [name="time"]'); if (tm && !tm.value) tm.value = nextHour(); const en = $('#sheet [name="end"]'); if (en && !en.value) en.value = addMin(tm.value, 60); }
   });
-  document.body.addEventListener('change', e => { if (e.target.id === 'importFile' && e.target.files[0]) { importJson(e.target.files[0]); e.target.value = ''; } });
+  document.body.addEventListener('change', e => { if (e.target.id === 'importFile' && e.target.files[0]) { importJson(e.target.files[0]); e.target.value = ''; } if (e.target.matches && e.target.matches('input[type=file][data-k]') && e.target.files.length) { subirAdjuntos(Array.from(e.target.files), e.target.dataset.k, e.target.dataset.v); e.target.value = ''; } });
   document.addEventListener('keydown', e => {
     const tag = document.activeElement ? document.activeElement.tagName : ''; const inField = /^(INPUT|TEXTAREA|SELECT)$/.test(tag);
     if (e.key === 'Escape') { if (menuEl) closeMenu(); else if (!$('#sheetWrap').classList.contains('hidden')) closeSheet(); else if (!$('#searchWrap').classList.contains('hidden')) closeSearch(); return; }
@@ -771,6 +780,7 @@ function fmtFecha(s) { if (!s) return ''; const d = s.slice(0, 10), h = s.slice(
 function obraDe(id) { return (state.obras || []).find(o => o.id === id) || null; }
 async function abrirObra(id) {
   state.obraId = id; state.obraDet = null; go('obra');
+  if (adjCache['o:' + id] === undefined) cargarAdjuntos({ obra: id }).then(() => refrescarAdjuntos('obra', id));
   try { const d = await srvFetch('obra&id=' + encodeURIComponent(id)); state.obraDet = { id: id, datos: (d.obra && d.obra.datos) || {}, extra: (d.obra && d.obra.extra) || {}, notas: d.notas || [] }; }
   catch (e) { state.obraDet = { id: id, datos: {}, extra: {}, notas: [] }; srvFallo(e); }
   if (state.view === 'obra' && state.obraId === id) render();
@@ -789,6 +799,7 @@ function viewObra() {
     '<div class="group-title">Sugerencias para esta fase</div>' + (SUGERENCIAS[o.estado] || ['Apuntar el siguiente paso']).map(s => '<div class="row"><span class="chk" style="border-style:dashed;opacity:.6"></span><div class="row-body"><div class="row-title" style="font-weight:500">' + esc(s) + '</div></div><button class="btn sm ghost" data-act="obra-sugerir" data-id="' + esc(o.id) + '" data-t="' + esc(s) + '">' + ico('plus') + 'Añadir</button></div>').join('') + '</section>';
   html += '<section class="card"><div class="card-head"><h2>Diario de obra <span class="n">' + (det ? det.notas.length : '…') + '</span></h2></div><div class="nota-form"><textarea id="notaTxt" placeholder="Apunta una llamada, una visita, un acuerdo… (queda con tu nombre y la hora)"></textarea><button class="btn primary sm" data-act="obra-nota" data-id="' + esc(o.id) + '">' + ico('plus') + 'Anotar</button></div>' +
     (det ? (det.notas.length ? det.notas.map(n => '<div class="nota">' + avHtml(n.autor, 'sm') + '<div><div class="nota-m"><b>' + esc(persona(n.autor).nombre) + '</b> · ' + esc(fmtFecha(n.fecha)) + '</div><div class="nota-t">' + esc(n.texto) + '</div></div></div>').join('') : '<div class="empty">Sin apuntes todavía</div>') : '<div class="empty">Cargando…</div>') + '</section></div>';
+  html += '<section class="card" style="margin-top:12px"><div class="card-head"><h2>Fotos y documentos</h2></div><div data-adj-box="obra:' + esc(o.id) + '">' + adjHtml({ obra: o.id }) + '</div></section>';
   if (det) { const filas = Object.assign({}, det.datos, det.extra); const keys = Object.keys(filas).filter(k => k !== 'nombre' && k !== 'id' && k !== 'wizard'); if (keys.length) html += '<section class="card" style="margin-top:12px"><div class="card-head"><h2>Datos de Prestón</h2><span class="hint">solo lectura</span></div><div class="datos-grid">' + keys.map(k => '<div><span>' + esc(ETQ[k] || k) + '</span><b>' + esc(filas[k]) + '</b></div>').join('') + '</div></section>'; }
   return html;
 }
@@ -816,6 +827,87 @@ function openNovedades() {
       : '<div class="empty"><b>✓</b>Nada nuevo desde la última vez</div>') +
     '<div class="sheet-foot"><span class="hint">Lo que te asignan, te comentan o cambian tus compañeros</span><span class="spacer"></span><button class="btn" data-act="novedades-visto">Marcar todo como visto</button></div>');
 }
+
+/* ===== modo empresa: tablero por fases, semana del equipo, panel, captación, adjuntos ===== */
+const FASES = [['entrada', 'Entrada'], ['proceso', 'En proceso'], ['revision', 'Para revisión'], ['enviado', 'Enviado']];
+function viewTablero() {
+  const obras = state.obras || []; const t = todayYmd(); const cols = { entrada: [], proceso: [], revision: [], enviado: [] };
+  obras.forEach(o => { if (o.estado === 'borrador') cols[cols[o.fase_clan] && o.fase_clan !== 'enviado' ? o.fase_clan : 'entrada'].push(o); else if (o.estado === 'enviada') cols.enviado.push(o); });
+  cols.enviado = cols.enviado.slice(0, 25);
+  const card = o => { const n = state.items.filter(it => it.obra && it.obra.id === o.id && (isRep(it) || !it.done)).length; const p = buscaPersona(o.autor); const ref = (o.fase_fecha || o.actualizado || '').slice(0, 10); const dias = /^\d{4}-\d{2}-\d{2}$/.test(ref) ? diffDays(ref, t) : 0;
+    return '<div class="tcard" draggable="' + (o.estado === 'borrador' ? 'true' : 'false') + '" data-obra="' + esc(o.id) + '" data-act="obra-sel" data-id="' + esc(o.id) + '"><div class="tc-t">' + esc(o.nombre) + '</div><div class="tc-m">' + (o.exp ? '<span class="pill">' + esc(o.exp) + '</span>' : '') + (p ? avHtml(p.usuario, 'sm') : (o.autor ? esc(o.autor) : '')) + (n ? '<span class="pill blue">' + n + ' tareas</span>' : '') + (dias > 0 ? '<span class="tc-d">' + dias + ' d</span>' : '') + '</div></div>'; };
+  let html = '<div class="hero"><div><div class="eyebrow">Presupuestos</div><h1>Tablero</h1><p class="sub">Arrastra cada presupuesto por su fase. «Enviado» lo pone Prestón al enviarlo.</p></div></div>';
+  html += '<div class="tablero">' + FASES.map(f => '<div class="tcol" data-fase="' + f[0] + '"><div class="tcol-h"><span>' + f[1] + '</span><span>' + cols[f[0]].length + '</span></div>' + (cols[f[0]].length ? cols[f[0]].map(card).join('') : '<div class="empty">—</div>') + '</div>').join('') + '</div>';
+  return html;
+}
+function moverFase(obra, fase) {
+  if (fase === 'enviado') { toast('Eso lo marca Prestón', 'Cuando el presupuesto se envía desde Prestón pasa solo a «Enviado»', 'info', 4000); return; }
+  const o = obraDe(obra); if (!o || o.estado !== 'borrador') return;
+  srvFetch('fase', { obra: obra, fase: fase }).then(r => { o.fase_clan = fase; o.fase_fecha = r.ahora || ''; render(); toast('Movido a ' + (FASES.find(f => f[0] === fase) || [])[1], o.nombre, 'ok', 1500); }).catch(srvFallo);
+}
+function viewSemana() {
+  const a = weekStart(state.cursor); const days = []; for (let i = 0; i < 7; i++) days.push(addDays(a, i)); const t = todayYmd();
+  let html = '<div class="cal-head"><button class="icon-btn" data-act="cal-prev">' + ico('left') + '</button><button class="icon-btn" data-act="cal-next">' + ico('right') + '</button><h1>' + weekTitle() + '</h1><button class="btn sm" data-act="cal-today">Hoy</button><span style="flex:1"></span><span class="hint">Una columna por persona</span></div>';
+  html += '<div class="semana"><table><thead><tr><th></th>' + state.equipo.map(p => '<th>' + avHtml(p.usuario, 'sm') + ' ' + esc(p.nombre) + '</th>').join('') + '</tr></thead><tbody>' +
+    days.map(d => { const dd = fromYmd(d); return '<tr class="' + (d === t ? 'hoy' : '') + '"><th><b>' + DAYS_S[dd.getDay()] + '</b> ' + dd.getDate() + '</th>' + state.equipo.map(p => { const its = state.items.filter(it => ((it.autor || '') === p.usuario || (it.para || []).includes(p.usuario)) && occursOn(it, d)).map(it => occ(it, d)).sort(sortOcc); return '<td>' + its.map(o => '<div class="sm-it' + (o.isDone ? ' done' : '') + (o.type === 'event' ? ' ev' : '') + '" data-id="' + o.id + '" data-occ="' + d + '" data-act="open" title="' + esc(o.title) + '">' + (o.time ? '<b>' + o.time + '</b> ' : '') + esc(o.title) + '</div>').join('') + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
+  return html;
+}
+function viewPanel() {
+  const t = todayYmd(); const all = state.items; const pend = it => isRep(it) || !it.done; const venc = it => it.date && it.date < t && !isRep(it) && !it.done && it.type === 'task';
+  const obras = state.obras || []; const crm = (state.crm && state.crm.solicitudes) || [];
+  let semReu = 0; for (let i = 0; i < 7; i++) semReu += all.filter(it => it.type === 'event' && occursOn(it, addDays(t, i))).length;
+  const kpi = (c, n, l, view, filter) => '<div class="kpi ' + c + '"' + (view ? ' data-act="go" data-view="' + view + '"' + (filter ? ' data-filter="' + filter + '"' : '') : '') + '><b>' + n + '</b>' + l + '</div>';
+  let html = '<div class="hero"><div><div class="eyebrow">Dirección</div><h1>Panel</h1><p class="sub">Cómo va el equipo y las obras, ahora mismo</p></div><div class="kpis">' + kpi('red', all.filter(venc).length, 'vencidas') + kpi('blue', all.filter(pend).length, 'pendientes') + kpi('purple', semReu, 'reuniones esta semana', 'semana') + kpi('green', crm.length, 'captación abiertas', 'captacion') + '</div></div>';
+  const filas = state.equipo.map(p => { const m = all.filter(it => (it.autor || '') === p.usuario || (it.para || []).includes(p.usuario)); let sem = 0; for (let i = 0; i < 7; i++) { const d = addDays(t, i); sem += m.filter(it => occursOn(it, d) && !isDone(it, d)).length; } return { p: p, pend: m.filter(pend).length, venc: m.filter(venc).length, hoy: m.filter(it => occursOn(it, t) && !isDone(it, t)).length, sem: sem }; });
+  const max = Math.max(1, ...filas.map(f => f.pend));
+  html += '<div class="grid2"><section class="card"><div class="card-head"><h2>Carga por persona</h2></div>' + filas.map(f => '<div class="barra" data-act="ver-de" data-u="' + f.p.usuario + '" data-view="all" data-filter="all">' + avHtml(f.p.usuario, 'sm') + '<div class="b-body"><div class="b-h"><b>' + esc(f.p.nombre) + '</b><span>' + f.pend + ' pendientes · ' + f.hoy + ' hoy · ' + f.sem + ' semana' + (f.venc ? ' · <span style="color:var(--red)">' + f.venc + ' vencidas</span>' : '') + '</span></div><div class="b-track"><i style="width:' + Math.round(f.pend * 100 / max) + '%;background:' + f.p.color + '"></i></div></div></div>').join('') + '</section>';
+  const est = ['borrador', 'enviada', 'aceptada', 'perdida'].map(e => ({ e: e, n: obras.filter(o => o.estado === e).length })); const maxO = Math.max(1, ...est.map(x => x.n));
+  const sinSeg = obras.filter(o => o.estado === 'enviada' && !all.some(it => it.obra && it.obra.id === o.id && pend(it))).slice(0, 8);
+  html += '<section class="card"><div class="card-head"><h2>Obras en Prestón</h2><span class="n">' + obras.length + '</span></div>' + est.map(x => '<div class="barra" data-act="obras-ir" data-v="' + x.e + '"><span class="estado ' + x.e + '">' + (OBRA_ESTADOS[x.e] || x.e) + '</span><div class="b-body"><div class="b-track"><i style="width:' + Math.round(x.n * 100 / maxO) + '%"></i></div></div><b class="b-n">' + x.n + '</b></div>').join('') +
+    (sinSeg.length ? '<div class="group-title">Enviadas sin ninguna tarea de seguimiento</div>' + sinSeg.map(o => '<div class="obra-row" data-act="obra-sel" data-id="' + esc(o.id) + '"><div class="ob-body"><div class="ob-t">' + esc(o.nombre) + '</div><div class="ob-m">' + esc(o.autor ? 'de ' + o.autor : '') + '</div></div><span class="pill red">sin seguimiento</span></div>').join('') : '') + '</section></div>';
+  const rec = all.filter(it => it.actualizado).sort((a, b) => a.actualizado < b.actualizado ? 1 : -1).slice(0, 12);
+  html += '<section class="card" style="margin-top:12px"><div class="card-head"><h2>Actividad reciente del equipo</h2></div>' + (rec.length ? rec.map(it => { const por = it.actualizadoPor || it.autor || ''; const sis = por === 'sistema'; return '<div class="row" data-id="' + it.id + '" data-occ="' + (it.date || '') + '">' + (sis ? '<span class="av sm all">' + ico('repeat') + '</span>' : avHtml(por, 'sm')) + '<div class="row-body" data-act="open"><div class="row-title">' + esc(it.title) + (it.done ? ' <span class="pill green">hecha</span>' : '') + '</div><div class="row-meta">' + esc(sis ? 'Clanedario' : persona(por).nombre) + ' · ' + esc(fmtFecha(it.actualizado)) + (it.obra && it.obra.nombre ? ' · ' + esc(it.obra.nombre) : '') + '</div></div></div>'; }).join('') : '<div class="empty">Sin actividad todavía</div>') + '</section>';
+  return html;
+}
+function crmRows(list) {
+  const t = todayYmd();
+  return list.map(s => { const venc = s.proxima && s.proxima < t; const estado = s.estado === 'nueva' ? 'nueva ' + fmtFecha(s.fecha) : (s.proxima ? (venc ? 'VENCIDA · ' : '') + relDay(s.proxima) + (s.proxima_txt ? ': ' + s.proxima_txt : '') : s.estado);
+    return '<div class="row crm"><span class="av sm" style="background:' + (s.estado === 'nueva' ? 'var(--red)' : venc ? 'var(--orange)' : 'var(--gray)') + '">' + (s.estado === 'nueva' ? 'N' : 'C') + '</span><div class="row-body"><div class="row-title">' + esc(s.nombre || 'Sin nombre') + (s.telefono ? ' · <a href="tel:' + esc(s.telefono) + '">' + esc(s.telefono) + '</a>' : '') + '</div><div class="row-meta">' + esc([s.direccion, s.campana, estado, s.asignado ? 'lo lleva ' + s.asignado : 'sin asignar'].filter(Boolean).join(' · ')) + '</div></div><div class="row-right">' + (s.proxima && !SRV.lectura ? '<button class="btn sm" data-act="crm-hecha" data-crm="' + s.id + '">Hecha</button>' : '') + '<a class="btn sm ghost" href="../captacion/" target="_blank" rel="noopener">CRM</a></div></div>'; }).join('');
+}
+function crmMias() { const t = todayYmd(); const l = (state.crm && state.crm.solicitudes) || []; return { nuevas: l.filter(s => s.estado === 'nueva'), hoy: l.filter(s => s.quien === YO && s.proxima && s.proxima <= t), todas: l }; }
+function viewCaptacion() {
+  const l = (state.crm && state.crm.solicitudes) || []; const g = {}; l.forEach(s => { (g[s.estado] = g[s.estado] || []).push(s); });
+  const ET = { nueva: 'Nuevas', contactada: 'Contactadas', visita: 'Visita concertada', presupuesto: 'Presupuesto enviado' };
+  let html = '<div class="hero"><div><div class="eyebrow">CRM de captación</div><h1>Captación</h1><p class="sub">' + (state.crm ? l.length + ' solicitudes abiertas' : 'Cargando…') + (state.crm && state.crm.aviso ? ' · ' + esc(state.crm.aviso) : '') + '</p></div><div class="kpis"><a class="kpi" href="../captacion/" target="_blank" rel="noopener">Abrir el CRM</a><div class="kpi" data-act="crm-recargar">' + ico('repeat') + 'Actualizar</div></div></div>';
+  html += '<div class="card">' + (l.length ? Object.keys(ET).filter(k => g[k]).map(k => '<div class="group-title">' + ET[k] + ' <span>' + g[k].length + '</span></div>' + crmRows(g[k])).join('') + Object.keys(g).filter(k => !ET[k]).map(k => '<div class="group-title">' + esc(k) + '</div>' + crmRows(g[k])).join('') : '<div class="empty">' + (state.crm ? 'Nada abierto en el CRM' : 'Cargando…') + '</div>') + '</div>';
+  return html;
+}
+function crmPost(op, body) { return fetch('../captacion/api.php?op=' + op, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'captacion' }, body: JSON.stringify(body) }).then(r => r.json()).then(j => { if (!j.ok) throw new Error(j.error || 'El CRM no ha aceptado el cambio'); return j; }); }
+async function srvCrm(force) {
+  if (!SRV) return;
+  try { const d = await srvFetch('crm'); state.crm = { solicitudes: d.solicitudes || [], aviso: d.aviso || '' }; }
+  catch (e) { state.crm = state.crm || { solicitudes: [], aviso: 'Sin conexión con el CRM' }; }
+  const nb = crmMias(); const b = $('#badgeCrm'); if (b) b.textContent = (nb.nuevas.length + nb.hoy.length) || '';
+  if (!sheetState && (state.view === 'captacion' || state.view === 'today' || state.view === 'panel' || force)) render();
+}
+const adjCache = {};
+function adjKey(o) { return o.item ? 'i:' + o.item : 'o:' + o.obra; }
+async function cargarAdjuntos(o) { try { const d = await srvFetch('adjuntos&' + (o.item ? 'item=' + encodeURIComponent(o.item) : 'obra=' + encodeURIComponent(o.obra))); adjCache[adjKey(o)] = d.adjuntos || []; } catch (e) { adjCache[adjKey(o)] = []; } }
+function adjHtml(o) {
+  const l = adjCache[adjKey(o)]; const k = o.item ? 'item' : 'obra'; const v = o.item || o.obra;
+  return '<div class="adj"><div class="adj-list">' + (l === undefined ? '<span class="hint">Cargando…</span>' : l.length ? l.map(a => { const img = (a.tipo || '').indexOf('image/') === 0; const u = API + '?op=adjunto&id=' + a.id;
+    return '<a class="adj-it" href="' + u + '" target="_blank" rel="noopener" title="' + esc(a.nombre) + ' · ' + esc(persona(a.autor).nombre) + ' · ' + esc(fmtFecha(a.fecha)) + '">' + (img ? '<img src="' + u + '" loading="lazy" alt="">' : '<span class="adj-doc">' + esc((a.ext || '').toUpperCase()) + '</span>') + '<span class="adj-n">' + esc(a.nombre) + '</span>' + ((a.autor === YO || SRV.admin) && !SRV.lectura ? '<button class="adj-x" data-act="adj-borrar" data-adj="' + a.id + '" data-k="' + k + '" data-v="' + esc(v) + '" title="Quitar">×</button>' : '') + '</a>'; }).join('') : '<span class="hint">Sin archivos</span>') + '</div>' +
+    (SRV.lectura ? '' : '<label class="btn sm">' + ico('plus') + 'Adjuntar foto o documento<input type="file" data-k="' + k + '" data-v="' + esc(v) + '" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" multiple></label>') + '</div>';
+}
+async function subirAdjuntos(files, k, v) {
+  for (const f of files) {
+    const fd = new FormData(); fd.append('f', f); fd.append(k, v);
+    try { const r = await fetch(API + '?op=subir', { method: 'POST', credentials: 'same-origin', headers: { 'X-Requested-With': 'clanedario' }, body: fd }).then(x => x.json()); if (!r.ok) throw new Error(r.error || 'No se pudo subir'); adjCache[k === 'item' ? 'i:' + v : 'o:' + v] = r.adjuntos || []; toast('Subido', f.name, 'ok', 1800); }
+    catch (e) { toast('No se pudo subir ' + f.name, String((e && e.message) || e), 'info', 5000); }
+  }
+  refrescarAdjuntos(k, v);
+}
+function refrescarAdjuntos(k, v) { $$('[data-adj-box="' + k + ':' + v + '"]').forEach(box => { box.innerHTML = adjHtml(k === 'item' ? { item: v } : { obra: v }); }); }
 
 /* ===== modo empresa: sincronización con proyecton.es (api.php) ===== */
 const API = 'api.php';
@@ -851,8 +943,9 @@ async function srvCargar() {
     srvListsSent = hayListas ? JSON.stringify(state.lists) : ''; srvAjSent = JSON.stringify(state.settings);
     srvOk = true; srvBanda(''); applyTheme(); applyDensity(); save();
   } catch (e) { srvFallo(e); toast('Trabajando con la copia de este navegador', 'No se ha podido cargar del servidor', 'info', 4000); }
-  srvObras(false);
+  srvObras(false); srvCrm(false);
 }
+let srvTicks = 0;
 async function srvObras(force) {
   if (!SRV || (state.obras && !force)) return;
   try { const d = await srvFetch('obras'); state.obras = d.obras || []; state.obrasAviso = d.aviso || ''; }
@@ -907,6 +1000,7 @@ async function srvLatido() {
     if (d.ahora) state.srvDesde = d.ahora;
     srvBien();
     if (tocado) { saveCache(); if (!sheetState && !menuEl) render(); else renderSidebar(); }
+    srvTicks++; if (srvTicks % 15 === 0) { srvCrm(false); if (state.view === 'obras' || state.view === 'tablero' || state.view === 'panel') srvObras(true); }
   } catch (e) { if (srvOk) srvFallo(e); }
 }
 
