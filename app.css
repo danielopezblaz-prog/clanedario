@@ -376,33 +376,99 @@ h2 .n{color:var(--muted);font-weight:600;font-size:13px}
 :root[data-density="compacta"] .filters .chip{padding:4px 10px;font-size:12px}
 :root[data-density="compacta"] .toasts{width:320px}
 
-/* ===== marca Proyecton (modo empresa): Sora + Manrope, rojo #B8251B, tinta #1A1A1A, fondo rosado ===== */
-:root[data-marca="proyecton"]{--font:"Manrope","Inter","Segoe UI",system-ui,sans-serif;--titulo:"Sora","Manrope","Segoe UI",sans-serif;--blue:#B8251B;--indigo:#8E1F17;--bg:#F6F1F0;--text:#1A1A1A;--text2:#3A3A3C;--muted:#7A7A7A;--sep:rgba(26,26,26,.12);--card:rgba(255,255,255,.86);--glass:rgba(255,255,255,.72)}
-:root[data-marca="proyecton"][data-theme="dark"]{--blue:#E04A3F;--indigo:#B8251B;--bg:#141112;--bg2:#1B1718;--card:rgba(34,28,29,.82);--card-solid:#231E1F;--glass:rgba(28,23,24,.75);--text:#F6F1F0;--text2:#D9D2D1;--muted:#9A9090;--sep:rgba(255,255,255,.1)}
-:root[data-marca="proyecton"] h1,:root[data-marca="proyecton"] h2,:root[data-marca="proyecton"] .brand-name,:root[data-marca="proyecton"] .stat b,:root[data-marca="proyecton"] .kpi b,:root[data-marca="proyecton"] .cal-head h1,:root[data-marca="proyecton"] .day-panel .dp-head b,:root[data-marca="proyecton"] .team-card .th b,:root[data-marca="proyecton"] .sheet-head h2,:root[data-marca="proyecton"] .sheet .title-in{font-family:var(--titulo);letter-spacing:-.3px}
-:root[data-marca="proyecton"] .b1{background:radial-gradient(circle,#f3c4bf,transparent 70%)}
-:root[data-marca="proyecton"] .b2{background:radial-gradient(circle,#ffd3cc,transparent 70%)}
-:root[data-marca="proyecton"] .b3{background:radial-gradient(circle,#e1e4e9,transparent 70%)}
-:root[data-marca="proyecton"] .brand-icon{background:#fff;box-shadow:0 4px 14px rgba(184,37,27,.22);padding:3px;overflow:hidden}
-:root[data-marca="proyecton"] .brand-icon img{width:100%;height:100%;object-fit:contain;display:block}
-:root[data-marca="proyecton"] .brand-sub{color:var(--blue);font-weight:700;letter-spacing:.3px;text-transform:uppercase;font-size:10px}
-:root[data-marca="proyecton"] .eyebrow{color:var(--blue)}
-:root[data-marca="proyecton"] .nav-btn.active{box-shadow:inset 3px 0 0 var(--blue),var(--shadow)}
+/* ===== marca Proyecton (modo empresa): el lenguaje del dossier y la hoja de visita =====
+   Blanco, Manrope en el texto, Sora en los títulos, cabeceras con línea roja, títulos de sección en mayúsculas rojas
+   con espaciado, líneas finas grises, tono suave #F6EDED, dorado #B7791F de apoyo. Plano: sin cristal ni manchas. */
+:root[data-marca="proyecton"]{--font:"Manrope","Segoe UI",system-ui,sans-serif;--titulo:"Sora","Manrope","Segoe UI",sans-serif;--rojo:#B8251B;--oro:#B7791F;--suave:#F6EDED;--linea:#E4DCDC;
+  --blue:#B8251B;--indigo:#8E1F17;--purple:#8E1F17;--orange:#B7791F;--green:#2E7D57;--bg:#F7F4F4;--bg2:#F1ECEC;--text:#1A1A1A;--text2:#3A3A3A;--muted:#6E6E6E;--sep:#E4DCDC;--fill:#F3EEEE;--fill2:#E6DDDD;
+  --card:#FFFFFF;--card-solid:#FFFFFF;--glass:#FFFFFF;--shadow:none;--shadow-lg:0 12px 40px rgba(26,26,26,.16);--r:10px;--r-sm:8px}
+:root[data-marca="proyecton"][data-theme="dark"]{--rojo:#E0483D;--blue:#E0483D;--indigo:#B8251B;--purple:#B8251B;--suave:#2A1F1F;--linea:#332C2D;--bg:#141112;--bg2:#1B1718;--text:#F4EFEF;--text2:#D6CFCF;--muted:#9A9090;--sep:#332C2D;--fill:#241F20;--fill2:#2F2829;--card:#1F1B1C;--card-solid:#1F1B1C;--glass:#1A1617}
+:root[data-marca="proyecton"] .bg{display:none}
+:root[data-marca="proyecton"] body{font-size:13.5px}
+:root[data-marca="proyecton"] h1,:root[data-marca="proyecton"] .cal-head h1,:root[data-marca="proyecton"] .day-panel .dp-head b,:root[data-marca="proyecton"] .team-card .th b,:root[data-marca="proyecton"] .sheet-head h2,:root[data-marca="proyecton"] .sheet .title-in,:root[data-marca="proyecton"] .kpi b,:root[data-marca="proyecton"] .stat b,:root[data-marca="proyecton"] .brand-name{font-family:var(--titulo);letter-spacing:0}
+:root[data-marca="proyecton"] h1{font-size:22px;font-weight:800;color:var(--text)}
+:root[data-marca="proyecton"] h2,:root[data-marca="proyecton"] .group-title,:root[data-marca="proyecton"] .side-head,:root[data-marca="proyecton"] .eyebrow,:root[data-marca="proyecton"] .tcol-h,:root[data-marca="proyecton"] .field label,:root[data-marca="proyecton"] .cal-dow,:root[data-marca="proyecton"] .datos-grid span{font-family:var(--titulo);font-weight:700;font-size:10.5px;letter-spacing:1.3px;text-transform:uppercase;color:var(--rojo)}
+:root[data-marca="proyecton"] h2 .n,:root[data-marca="proyecton"] .group-title span{color:var(--muted);letter-spacing:0;font-family:var(--font)}
+:root[data-marca="proyecton"] .group-title.red{color:var(--rojo)}
+:root[data-marca="proyecton"] .sub{color:var(--muted)}
+:root[data-marca="proyecton"] .hero{border-bottom:2px solid var(--rojo);padding-bottom:12px;margin-bottom:14px}
+:root[data-marca="proyecton"] .card,:root[data-marca="proyecton"] .stat,:root[data-marca="proyecton"] .kpi,:root[data-marca="proyecton"] .cal-cell,:root[data-marca="proyecton"] .day-panel,:root[data-marca="proyecton"] .week,:root[data-marca="proyecton"] .tcol,:root[data-marca="proyecton"] .semana,:root[data-marca="proyecton"] .next-up,:root[data-marca="proyecton"] .quick,:root[data-marca="proyecton"] .apps-row a{background:var(--card);border:1px solid var(--linea);box-shadow:none}
+:root[data-marca="proyecton"] .card-head{border-bottom:1px solid var(--linea);padding-bottom:6px;margin-bottom:6px}
+:root[data-marca="proyecton"] .tcard{border:1px solid var(--linea);box-shadow:none}
+:root[data-marca="proyecton"] .tcol{background:var(--bg2)}
+:root[data-marca="proyecton"] .row + .row::before{content:"";position:absolute;left:36px;right:6px;top:-1px;height:1px;background:var(--linea)}
+:root[data-marca="proyecton"] .row:hover{background:var(--suave)}
+:root[data-marca="proyecton"] .row-title{font-weight:600}
+:root[data-marca="proyecton"] .chk{border-color:var(--rojo);border-width:1.4px}
+:root[data-marca="proyecton"] .row.done .chk{background:var(--rojo);border-color:var(--rojo)}
+:root[data-marca="proyecton"] .sidebar{background:var(--card);border-right:1px solid var(--linea);backdrop-filter:none;-webkit-backdrop-filter:none}
+:root[data-marca="proyecton"] .brand{display:none}
+:root[data-marca="proyecton"] .logo-cab{display:block;margin:0 4px 10px;padding-bottom:10px;border-bottom:2px solid var(--rojo)}
+:root[data-marca="proyecton"] .logo-cab img{height:42px;width:auto;max-width:100%;display:block;object-fit:contain;object-position:left;background:transparent;border-radius:0;padding:0}
+:root[data-marca="proyecton"] .nav-btn{font-weight:600;font-size:13px;border-radius:8px;padding:6px 8px}
+:root[data-marca="proyecton"] .nav-btn.active{background:var(--suave);color:var(--rojo);box-shadow:inset 3px 0 0 var(--rojo)}
+:root[data-marca="proyecton"] .nav-ic{border-radius:6px}
 :root[data-marca="proyecton"] .c-blue{background:#B8251B}
 :root[data-marca="proyecton"] .c-red{background:#1A1A1A}
 :root[data-marca="proyecton"] .c-purple{background:#8E1F17}
 :root[data-marca="proyecton"] .c-green{background:#2E7D57}
 :root[data-marca="proyecton"] .c-orange{background:#B7791F}
-:root[data-marca="proyecton"] .btn.primary{box-shadow:0 6px 16px rgba(184,37,27,.28)}
-:root[data-marca="proyecton"] .ring{background:conic-gradient(var(--blue) calc(var(--p)*1%),var(--fill) 0)}
-:root[data-marca="proyecton"] .cal-cell.today .cal-n,:root[data-marca="proyecton"] .week .wh.today b{background:#1A1A1A}
-:root[data-marca="proyecton"] .mini-grid .d.t{background:var(--blue)}
-:root[data-marca="proyecton"] .tabbar button.active{color:var(--blue)}
-:root[data-marca="proyecton"] .logo-cab{display:block;height:44px;margin:2px 6px 10px}
-:root[data-marca="proyecton"] .logo-cab img{height:44px;width:auto;max-width:100%;display:block;background:#fff;border-radius:10px;padding:4px 10px;object-fit:contain}
-:root[data-marca="proyecton"] .brand{display:none}
-:root[data-marca="proyecton"] .row-title{font-weight:600}
-:root[data-marca="proyecton"] .quick:focus-within{border-color:var(--blue);box-shadow:0 0 0 4px rgba(184,37,27,.14),var(--shadow)}
+:root[data-marca="proyecton"] .c-gray{background:#6E6E6E}
+:root[data-marca="proyecton"] .badge{background:var(--rojo)}
+:root[data-marca="proyecton"] .badge.soft{background:var(--fill2);color:var(--text2)}
+:root[data-marca="proyecton"] .btn{border-radius:8px;background:var(--card);border:1px solid var(--linea);color:var(--text)}
+:root[data-marca="proyecton"] .btn.primary{background:var(--rojo);border-color:var(--rojo);color:#fff;box-shadow:none}
+:root[data-marca="proyecton"] .btn.danger{background:var(--suave);border-color:var(--linea);color:var(--rojo)}
+:root[data-marca="proyecton"] .btn.ghost{background:transparent;border-color:transparent;color:var(--rojo)}
+:root[data-marca="proyecton"] .icon-btn{border-radius:8px}
+:root[data-marca="proyecton"] .icon-btn:hover,:root[data-marca="proyecton"] .nav-btn:hover{background:var(--suave)}
+:root[data-marca="proyecton"] .quick:focus-within{border-color:var(--rojo);box-shadow:0 0 0 3px rgba(184,37,27,.12)}
+:root[data-marca="proyecton"] .quick-ic{color:var(--rojo)}
+:root[data-marca="proyecton"] .kpi{border-radius:8px;padding:6px 12px}
+:root[data-marca="proyecton"] .kpi b{font-size:17px}
+:root[data-marca="proyecton"] .kpi.red b{color:var(--rojo)}
+:root[data-marca="proyecton"] .kpi.blue b,:root[data-marca="proyecton"] .kpi.purple b,:root[data-marca="proyecton"] .kpi.green b{color:var(--text)}
+:root[data-marca="proyecton"] .kpi.purple{border-color:var(--oro)}
+:root[data-marca="proyecton"] .ring{background:conic-gradient(var(--rojo) calc(var(--p)*1%),var(--fill2) 0)}
+:root[data-marca="proyecton"] .ring::before{background:var(--card)}
+:root[data-marca="proyecton"] .pill{border-radius:6px;background:var(--fill)}
+:root[data-marca="proyecton"] .pill.blue{background:var(--suave);color:var(--rojo)}
+:root[data-marca="proyecton"] .chip.blue,:root[data-marca="proyecton"] .chip.purple{background:var(--suave);color:var(--rojo)}
+:root[data-marca="proyecton"] .filters .chip.on{background:var(--rojo);color:#fff}
+:root[data-marca="proyecton"] .seg{background:var(--fill);border:1px solid var(--linea)}
+:root[data-marca="proyecton"] .seg button.on{background:var(--card);color:var(--rojo);box-shadow:none;border:1px solid var(--linea)}
+:root[data-marca="proyecton"] .cal-cell{border-radius:8px}
+:root[data-marca="proyecton"] .cal-cell.sel{border-color:var(--rojo)}
+:root[data-marca="proyecton"] .cal-cell.today .cal-n,:root[data-marca="proyecton"] .week .wh.today b{background:var(--rojo)}
+:root[data-marca="proyecton"] .mini-grid .d.t{background:var(--rojo)}
+:root[data-marca="proyecton"] .cchip.ev,:root[data-marca="proyecton"] .wev.ev{background:var(--c);color:#fff}
+:root[data-marca="proyecton"] .tl .row.next{background:var(--suave)}
+:root[data-marca="proyecton"] .tl .row.next .row-title::after{background:var(--rojo)}
+:root[data-marca="proyecton"] .nowline{color:var(--rojo)}
+:root[data-marca="proyecton"] .nowline::after{background:var(--rojo)}
+:root[data-marca="proyecton"] .sheet{border:1px solid var(--linea);border-radius:12px}
+:root[data-marca="proyecton"] .sheet .title-in{border-bottom:2px solid var(--rojo)}
+:root[data-marca="proyecton"] .field input,:root[data-marca="proyecton"] .field select,:root[data-marca="proyecton"] .field textarea,:root[data-marca="proyecton"] .nota-form textarea,:root[data-marca="proyecton"] .nota-form input,:root[data-marca="proyecton"] .obras-q input{background:var(--card);border:1px solid var(--linea);border-radius:8px}
+:root[data-marca="proyecton"] .field input:focus,:root[data-marca="proyecton"] .field select:focus,:root[data-marca="proyecton"] .field textarea:focus{border-color:var(--rojo);box-shadow:0 0 0 3px rgba(184,37,27,.12)}
+:root[data-marca="proyecton"] .toggle{background:var(--card);border:1px solid var(--linea);border-radius:8px}
+:root[data-marca="proyecton"] .toggle.on .sw{background:var(--rojo)}
+:root[data-marca="proyecton"] .who-pick .chip.on{background:var(--rojo);color:#fff}
+:root[data-marca="proyecton"] .toast{border:1px solid var(--linea);border-left:4px solid var(--rojo);border-radius:10px;box-shadow:var(--shadow-lg)}
+:root[data-marca="proyecton"] .toast .t-ic{background:var(--rojo);border-radius:8px}
+:root[data-marca="proyecton"] .toast.ok .t-ic{background:#2E7D57}
+:root[data-marca="proyecton"] .menu{border:1px solid var(--linea);border-radius:10px}
+:root[data-marca="proyecton"] .tabbar{background:var(--card);border-top:1px solid var(--linea);backdrop-filter:none;-webkit-backdrop-filter:none}
+:root[data-marca="proyecton"] .tabbar button.active{color:var(--rojo)}
+:root[data-marca="proyecton"] .band{border-radius:8px;border:1px solid var(--linea)}
+:root[data-marca="proyecton"] .estado.enviada{background:#FBF1DF;color:var(--oro)}
+:root[data-marca="proyecton"] .estado.borrador{background:var(--suave);color:var(--rojo)}
+:root[data-marca="proyecton"] .b-track i{background:var(--rojo)}
+:root[data-marca="proyecton"] .more-grid button{border:1px solid var(--linea);background:var(--card)}
+:root[data-marca="proyecton"] .av.on{border-color:var(--rojo)}
+:root[data-marca="proyecton"] .search{border:1px solid var(--linea)}
+:root[data-marca="proyecton"] .semana thead th,:root[data-marca="proyecton"] .semana tbody th{background:var(--bg2)}
+:root[data-marca="proyecton"] .sm-it.ev{background:var(--suave)}
+:root[data-marca="proyecton"] .obra-row.on,:root[data-marca="proyecton"] .obra-row:hover{background:var(--suave)}
 
 /* modo empresa: personas, equipo, obras, apps, conexión */
 .who{display:flex;gap:4px;flex-wrap:wrap;align-items:center;padding:0 6px 8px}

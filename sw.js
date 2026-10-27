@@ -1,5 +1,5 @@
 /* Clanedario: service worker. Guarda la app para que abra sin conexión y muestra los avisos en el móvil. */
-const CACHE = 'clanedario-v8';
+const CACHE = 'clanedario-v9';
 const FILES = ['./', './index.html', './app.css', './app.js', './icon.svg', './icon.png', './icon-192.png', './icon-512.png', './manifest.webmanifest'];
 
 /* Se guarda lo que haya: en proyecton.es no existe index.html (es index.php) y no debe fallar por eso. */

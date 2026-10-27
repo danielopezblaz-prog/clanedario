@@ -10,7 +10,7 @@ const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 
 const MONTHS_S = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const COLORS = ['#007AFF', '#AF52DE', '#34C759', '#FF9500', '#FF3B30', '#5AC8FA', '#FF2D55', '#5856D6', '#FFCC00', '#8E8E93'];
 const HOUR = 52;
-const APP_VERSION = '27-10-2026 · 8';
+const APP_VERSION = '27-10-2026 · 9';
 /* Modo empresa: index.php de proyecton.es inyecta CLAN_USUARIO (quién soy) y CLAN_APPS (lanzador). Sin eso, app personal. */
 const SRV = (window.CLAN_USUARIO && window.CLAN_USUARIO.usuario) ? window.CLAN_USUARIO : null;
 const YO = SRV ? SRV.usuario : '';
@@ -791,7 +791,7 @@ function viewObra() {
   const pend = its.filter(it => isRep(it) || !it.done).map(it => occ(it, nextOcc(it))).sort(sortList);
   const done = its.filter(it => !isRep(it) && it.done).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
   const maps = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([o.dir, o.municipio].filter(Boolean).join(', '));
-  const ETQ = { dir: 'Dirección', municipio: 'Municipio', viviendas: 'Viviendas', plantas: 'Plantas', estado: 'Estado', exp: 'Código', autor: 'Autor', fase: 'Fase', com: 'Comunidad', updated_at: 'Actualizada', created_at: 'Creada', gg: 'GG %', bi: 'BI %', iva: 'IVA %', anno: 'Año', ano: 'Año', locales: 'Locales (m²)' };
+  const ETQ = { dir: 'Dirección', municipio: 'Municipio', muni: 'Municipio', promotor: 'Promotor / administración', viviendas: 'Viviendas', plantas: 'Plantas', estado: 'Estado', f_estado: 'Fecha del estado', exp: 'Código', autor: 'Autor', fase: 'Fase en Prestón', com: 'Comunidad', updated_at: 'Actualizada', creada: 'Creada', created_at: 'Creada', gg: 'GG %', bi: 'BI %', iva: 'IVA %', anno: 'Año', ano: 'Año', locales: 'Locales (m²)', rev: 'Revisión' };
   let html = '<div class="hero"><div><div class="eyebrow"><span data-act="go" data-view="obras" style="cursor:pointer">← Obras</span> · ' + (OBRA_ESTADOS[o.estado] || esc(o.estado) || '—') + '</div><h1>' + esc(o.nombre) + (o.exp ? ' <span class="pill">' + esc(o.exp) + '</span>' : '') + '</h1><p class="sub">' + esc([o.dir, o.municipio, o.viviendas ? o.viviendas + ' viviendas' : '', o.autor ? 'la lleva ' + o.autor : ''].filter(Boolean).join(' · ')) + '</p></div>' +
     '<div class="kpis"><div class="kpi blue" data-act="obra-nueva" data-id="' + esc(o.id) + '">' + ico('plus') + 'Tarea</div><div class="kpi purple" data-act="obra-nueva" data-id="' + esc(o.id) + '" data-type="event">' + ico('users') + 'Reunión</div>' + (APPS.length ? '<a class="kpi" href="' + esc(APPS[0].url) + '" target="_blank" rel="noopener">Abrir en Prestón</a>' : '') + '<a class="kpi" href="' + maps + '" target="_blank" rel="noopener">' + ico('pin') + 'Mapa</a></div></div>';
   html += '<div class="grid2"><section class="card"><div class="card-head"><h2>Tareas y reuniones <span class="n">' + pend.length + '</span></h2></div>' + (pend.length ? pend.map(x => rowHtml(x)).join('') : '<div class="empty">Nada pendiente en esta obra</div>') +
@@ -832,7 +832,8 @@ function openNovedades() {
 const FASES = [['entrada', 'Entrada'], ['proceso', 'En proceso'], ['revision', 'Para revisión'], ['enviado', 'Enviado']];
 function viewTablero() {
   const obras = state.obras || []; const t = todayYmd(); const cols = { entrada: [], proceso: [], revision: [], enviado: [] };
-  obras.forEach(o => { if (o.estado === 'borrador') cols[cols[o.fase_clan] && o.fase_clan !== 'enviado' ? o.fase_clan : 'entrada'].push(o); else if (o.estado === 'enviada') cols.enviado.push(o); });
+  const faseDe = o => { const f = o.fase_clan || o.fase || ''; return (f === 'proceso' || f === 'revision') ? f : 'entrada'; };
+  obras.forEach(o => { if (o.estado === 'borrador') cols[faseDe(o)].push(o); else if (o.estado === 'enviada') cols.enviado.push(o); });
   cols.enviado = cols.enviado.slice(0, 25);
   const card = o => { const n = state.items.filter(it => it.obra && it.obra.id === o.id && (isRep(it) || !it.done)).length; const p = buscaPersona(o.autor); const ref = (o.fase_fecha || o.actualizado || '').slice(0, 10); const dias = /^\d{4}-\d{2}-\d{2}$/.test(ref) ? diffDays(ref, t) : 0;
     return '<div class="tcard" draggable="' + (o.estado === 'borrador' ? 'true' : 'false') + '" data-obra="' + esc(o.id) + '" data-act="obra-sel" data-id="' + esc(o.id) + '"><div class="tc-t">' + esc(o.nombre) + '</div><div class="tc-m">' + (o.exp ? '<span class="pill">' + esc(o.exp) + '</span>' : '') + (p ? avHtml(p.usuario, 'sm') : (o.autor ? esc(o.autor) : '')) + (n ? '<span class="pill blue">' + n + ' tareas</span>' : '') + (dias > 0 ? '<span class="tc-d">' + dias + ' d</span>' : '') + '</div></div>'; };
