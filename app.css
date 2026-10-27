@@ -376,6 +376,50 @@ h2 .n{color:var(--muted);font-weight:600;font-size:13px}
 :root[data-density="compacta"] .filters .chip{padding:4px 10px;font-size:12px}
 :root[data-density="compacta"] .toasts{width:320px}
 
+/* modo empresa: personas, equipo, obras, apps, conexión */
+.who{display:flex;gap:4px;flex-wrap:wrap;align-items:center;padding:0 6px 8px}
+.av{width:26px;height:26px;border-radius:50%;display:inline-grid;place-items:center;color:#fff;font-size:11px;font-weight:800;border:2px solid transparent;cursor:pointer;flex:none;line-height:1}
+.av.on{border-color:var(--text)}
+.av.all{background:var(--fill2);color:var(--text);font-size:10px}
+.av svg{width:13px;height:13px;stroke-width:2.4}
+.band a.btn{color:var(--blue);background:var(--card-solid)}
+.more-lists a.nav-btn,.nav a.nav-btn{text-decoration:none}
+.av.sm{width:18px;height:18px;font-size:9px;border-width:1px;cursor:default;vertical-align:middle}
+.who .lbl{font-size:11px;color:var(--muted);font-weight:600;margin-left:4px}
+.band{margin:8px 22px 0;padding:8px 12px;border-radius:12px;background:color-mix(in srgb,var(--red) 14%,transparent);color:var(--red);font-weight:600;font-size:13px;display:flex;align-items:center;gap:10px}
+.band.aviso{background:color-mix(in srgb,var(--orange) 16%,transparent);color:var(--orange)}
+.band .btn{margin-left:auto}
+.team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.team-card .th{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.team-card .th b{font-size:15px}
+.team-card .th .btn{margin-left:auto}
+.team-card .stats3{display:flex;gap:6px;margin:6px 0 8px}
+.team-card .stats3 span{flex:1;background:var(--fill);border-radius:9px;padding:5px 6px;font-size:10.5px;color:var(--muted);text-align:center;cursor:pointer}
+.team-card .stats3 b{display:block;font-size:16px;color:var(--text)}
+.team-card .stats3 span.red b{color:var(--red)}
+.obra-row{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:12px;cursor:pointer}
+.obra-row:hover{background:var(--fill)}
+.obra-row.on{background:var(--fill)}
+.obra-row .ob-body{flex:1;min-width:0}
+.obra-row .ob-t{font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.obra-row .ob-m{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.obra-det{padding:2px 8px 10px 30px;border-bottom:1px solid var(--sep);margin-bottom:4px}
+.estado{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:7px;text-transform:uppercase;letter-spacing:.3px;background:var(--fill);color:var(--text2);flex:none}
+.estado.borrador{background:color-mix(in srgb,var(--blue) 15%,transparent);color:var(--blue)}
+.estado.enviada{background:color-mix(in srgb,var(--orange) 18%,transparent);color:var(--orange)}
+.estado.aceptada{background:color-mix(in srgb,var(--green) 18%,transparent);color:var(--green)}
+.estado.perdida{background:color-mix(in srgb,var(--red) 14%,transparent);color:var(--red)}
+.who-pick{display:flex;gap:6px;flex-wrap:wrap}
+.who-pick .chip{cursor:pointer;padding:5px 10px;gap:6px}
+.who-pick .chip.on{background:var(--text);color:var(--bg)}
+.app-ic{width:26px;height:26px;border-radius:8px;color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px;flex:none}
+.apps-row{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.apps-row a{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;background:var(--card);box-shadow:var(--shadow);font-weight:600;font-size:13px;color:var(--text);text-decoration:none}
+.search-in input{min-width:0}
+.obras-q{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.obras-q input{flex:1;height:36px;border-radius:11px;border:1px solid transparent;background:var(--fill);padding:0 12px;outline:none}
+.obras-q input:focus{border-color:var(--blue)}
+
 /* barra inferior (móvil) y hoja «Más» */
 .tabbar{display:none}
 .more-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:6px}

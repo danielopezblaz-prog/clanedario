@@ -10,7 +10,11 @@ const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 
 const MONTHS_S = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const COLORS = ['#007AFF', '#AF52DE', '#34C759', '#FF9500', '#FF3B30', '#5AC8FA', '#FF2D55', '#5856D6', '#FFCC00', '#8E8E93'];
 const HOUR = 52;
-const APP_VERSION = '26-10-2026 · 5';
+const APP_VERSION = '27-10-2026 · 6';
+/* Modo empresa: index.php de proyecton.es inyecta CLAN_USUARIO (quién soy) y CLAN_APPS (lanzador). Sin eso, app personal. */
+const SRV = (window.CLAN_USUARIO && window.CLAN_USUARIO.usuario) ? window.CLAN_USUARIO : null;
+const YO = SRV ? SRV.usuario : '';
+const APPS = Array.isArray(window.CLAN_APPS) ? window.CLAN_APPS : [];
 const ymd = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
 const fromYmd = s => { const p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); };
 const todayYmd = () => ymd(new Date());
@@ -29,7 +33,7 @@ function relDay(s) { if (!s) return 'Sin fecha'; const n = diffDays(todayYmd(), 
 const ico = n => '<svg><use href="#i-' + n + '"/></svg>';
 
 /* ===== datos ===== */
-const KEY = 'agenda.v1';
+const KEY = SRV ? 'clanedario.srv.' + SRV.usuario : 'agenda.v1';
 const DEFAULT_LISTS = [
   { id: 'inbox', name: 'Entrada', color: '#8E8E93' },
   { id: 'trabajo', name: 'Trabajo', color: '#007AFF' },
@@ -39,17 +43,18 @@ const DEFAULT_LISTS = [
 const REMINDERS = [[null, 'Sin aviso'], [0, 'A la hora'], [5, '5 min antes'], [10, '10 min antes'], [15, '15 min antes'], [30, '30 min antes'], [60, '1 hora antes'], [120, '2 horas antes'], [1440, '1 día antes']];
 const REPEATS = [['none', 'No se repite'], ['daily', 'Cada día'], ['weekdays', 'Días laborables'], ['weekly', 'Cada semana'], ['biweekly', 'Cada dos semanas'], ['monthly', 'Cada mes'], ['yearly', 'Cada año']];
 const remLabel = m => { const r = REMINDERS.find(x => x[0] === m); return r ? r[1] : m + ' min antes'; };
-const state = { items: [], lists: [], settings: { theme: 'auto', sound: true, name: '' }, fired: {}, view: 'today', listId: null, sel: todayYmd(), calMode: 'month', cursor: todayYmd(), miniCursor: todayYmd(), filter: 'all' };
+const state = { items: [], lists: [], settings: { theme: 'auto', sound: true, name: '' }, fired: {}, view: 'today', listId: null, sel: todayYmd(), calMode: 'month', cursor: todayYmd(), miniCursor: todayYmd(), filter: 'all', quien: 'yo', equipo: [], obras: null, obrasAviso: '', obraSel: null, obraQ: '', srvDesde: '' };
 
 function load() {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) { const d = JSON.parse(raw); state.items = d.items || []; state.lists = d.lists && d.lists.length ? d.lists : DEFAULT_LISTS.map(l => Object.assign({}, l)); Object.assign(state.settings, d.settings || {}); state.fired = d.fired || {}; }
-    else { state.lists = DEFAULT_LISTS.map(l => Object.assign({}, l)); seed(); save(); }
+    if (raw) { const d = JSON.parse(raw); state.items = d.items || []; state.lists = d.lists && d.lists.length ? d.lists : DEFAULT_LISTS.map(l => Object.assign({}, l)); Object.assign(state.settings, d.settings || {}); state.fired = d.fired || {}; state.srvDesde = d.desde || ''; state.equipo = d.equipo || []; }
+    else { state.lists = DEFAULT_LISTS.map(l => Object.assign({}, l)); if (!SRV) seed(); save(); }
   } catch (e) { console.error(e); state.lists = DEFAULT_LISTS.map(l => Object.assign({}, l)); }
 }
-function save() { try { localStorage.setItem(KEY, JSON.stringify({ v: 1, items: state.items, lists: state.lists, settings: state.settings, fired: state.fired })); } catch (e) { toast('No se pudo guardar', String(e), 'info'); } }
-function newItem(p) { return Object.assign({ id: uid(), type: 'task', title: '', notes: '', list: 'inbox', date: null, time: null, end: null, priority: 0, done: false, doneAt: null, doneDates: {}, reminder: null, repeat: 'none', location: '', created: Date.now(), updated: Date.now() }, p || {}); }
+function saveCache() { try { localStorage.setItem(KEY, JSON.stringify({ v: 1, items: state.items, lists: state.lists, settings: state.settings, fired: state.fired, desde: state.srvDesde, equipo: state.equipo })); } catch (e) { toast('No se pudo guardar', String(e), 'info'); } }
+function save() { saveCache(); if (SRV) srvProgramar(); }
+function newItem(p) { return Object.assign({ id: uid(), type: 'task', title: '', notes: '', list: 'inbox', date: null, time: null, end: null, priority: 0, done: false, doneAt: null, doneDates: {}, reminder: null, repeat: 'none', location: '', autor: YO, para: [], privado: false, obra: null, created: Date.now(), updated: Date.now() }, p || {}); }
 function seed() {
   const t = todayYmd();
   state.items = [
@@ -80,19 +85,26 @@ const isDone = (it, date) => isRep(it) ? !!((it.doneDates || {})[date]) : !!it.d
 const occ = (it, date) => Object.assign({}, it, { occ: date, isDone: isDone(it, date) });
 function sortOcc(a, b) { const ta = a.time ? minutes(a.time) : 9999, tb = b.time ? minutes(b.time) : 9999; if (a.isDone !== b.isDone) return a.isDone ? 1 : -1; if (ta !== tb) return ta - tb; return (b.priority || 0) - (a.priority || 0); }
 function sortList(a, b) { const da = a.occ || '9999', db = b.occ || '9999'; if (da !== db) return da < db ? -1 : 1; return sortOcc(a, b); }
-const itemsOn = date => state.items.filter(it => occursOn(it, date)).map(it => occ(it, date)).sort(sortOcc);
-const overdue = () => { const t = todayYmd(); return state.items.filter(it => it.date && it.date < t && !isRep(it) && !it.done && it.type === 'task').map(it => occ(it, it.date)).sort(sortList); };
-const undated = () => state.items.filter(it => !it.date && !it.done).map(it => occ(it, null)).sort((a, b) => (b.priority || 0) - (a.priority || 0) || b.created - a.created);
-const pendingAll = () => state.items.filter(it => isRep(it) || !it.done);
+/* ===== equipo: quién ve qué ===== */
+const esMio = it => !SRV || (it.autor || YO) === YO || (it.para || []).includes(YO);
+function pool() { if (!SRV || state.quien === 'todos') return state.items; const q = state.quien === 'yo' ? YO : state.quien; return state.items.filter(it => (it.autor || YO) === q || (it.para || []).includes(q)); }
+function persona(u) { return state.equipo.find(p => p.usuario === u) || { usuario: u, nombre: u ? cap(u) : '—', color: '#8E8E93' }; }
+function avHtml(u, cls) { const p = persona(u); return '<span class="av ' + (cls || '') + '" style="background:' + p.color + '" title="' + esc(p.nombre) + '">' + esc(p.nombre.charAt(0).toUpperCase()) + '</span>'; }
+function buscaPersona(txt) { const n = norm(txt); if (!n) return null; return state.equipo.find(p => p.usuario === n || norm(p.nombre) === n) || state.equipo.find(p => p.usuario.startsWith(n) || norm(p.nombre).startsWith(n)) || null; }
+const itemsOn = date => pool().filter(it => occursOn(it, date)).map(it => occ(it, date)).sort(sortOcc);
+const overdue = () => { const t = todayYmd(); return pool().filter(it => it.date && it.date < t && !isRep(it) && !it.done && it.type === 'task').map(it => occ(it, it.date)).sort(sortList); };
+const undated = () => pool().filter(it => !it.date && !it.done).map(it => occ(it, null)).sort((a, b) => (b.priority || 0) - (a.priority || 0) || b.created - a.created);
+const pendingAll = () => pool().filter(it => isRep(it) || !it.done);
 function nextOcc(it) { if (!it.date) return null; if (!isRep(it)) return it.date; const t = todayYmd(); let d = it.date > t ? it.date : t; for (let i = 0; i < 400; i++) { if (occursOn(it, d) && !isDone(it, d)) return d; d = addDays(d, 1); } return it.date; }
 
 /* ===== añadir rápido en lenguaje natural ===== */
 const WD = { domingo: 0, lunes: 1, martes: 2, miercoles: 3, jueves: 4, viernes: 5, sabado: 6 };
 function nextWeekday(name, allowToday) { const w = WD[norm(name)]; if (w == null) return null; const d = new Date(); let n = (w - d.getDay() + 7) % 7; if (n === 0 && !allowToday) n = 7; d.setDate(d.getDate() + n); return ymd(d); }
 function parseQuick(text) {
-  const r = { type: 'task', title: '', list: 'inbox', priority: 0, date: null, time: null, end: null, repeat: 'none', reminder: null, location: '' };
+  const r = { type: 'task', title: '', list: 'inbox', priority: 0, date: null, time: null, end: null, repeat: 'none', reminder: null, location: '', para: [] };
   let s = ' ' + text.replace(/[ ]+/g, ' ').trim() + ' ';
   const H = (h, m) => pad(Number(h)) + ':' + (m || '00');
+  if (SRV) s = s.replace(/ @([^ ]+)/g, (m, name) => { const p = buscaPersona(name); if (p) { if (p.usuario !== YO && !r.para.includes(p.usuario)) r.para.push(p.usuario); return ' '; } return m; });
   s = s.replace(/ #([^ ]+)/g, (m, name) => { const n = norm(name); const l = state.lists.find(x => norm(x.name) === n) || state.lists.find(x => norm(x.name).startsWith(n)); if (l) { r.list = l.id; return ' '; } return m; });
   s = s.replace(/ !(alta|media|baja|1|2|3)(?= )/gi, (m, p) => { p = p.toLowerCase(); r.priority = (p === 'alta' || p === '3') ? 3 : (p === 'media' || p === '2') ? 2 : 1; return ' '; });
   s = s.replace(/ (?:avisa(?:r|me)?|recuerda(?:me)?|recuérda(?:me)?|aviso) ([0-9]{1,3}) ?(min|minutos|m|h|hora|horas|dia|día|dias|días)? antes(?= )/i, (m, n, u) => { u = norm(u || 'min'); r.reminder = Number(n) * (u.startsWith('h') ? 60 : u.startsWith('d') ? 1440 : 1); return ' '; });
@@ -127,6 +139,7 @@ function quickChips(r) {
   if (r.priority) c.push([r.priority === 3 ? 'red' : r.priority === 2 ? 'orange' : 'blue', ico('flag') + ['', 'Baja', 'Media', 'Alta'][r.priority]]);
   if (r.repeat !== 'none') c.push(['green', ico('repeat') + REPEATS.find(x => x[0] === r.repeat)[1]]);
   if (r.reminder != null) c.push(['orange', ico('bell') + remLabel(r.reminder)]);
+  if (r.para && r.para.length) c.push(['', r.para.map(p => avHtml(p, 'sm')).join('') + ' ' + r.para.map(p => esc(persona(p).nombre)).join(', ')]);
   return c;
 }
 function renderQuickChips() { const v = $('#quickInput').value.trim(); const c = $('#quickChips'); if (!v) { c.innerHTML = ''; return; } c.innerHTML = quickChips(parseQuick(v)).map(x => '<span class="chip ' + x[0] + '">' + x[1] + '</span>').join(''); }
@@ -150,6 +163,8 @@ function rowHtml(o, opts) {
   if (o.location) meta.push(ico('pin') + esc(o.location));
   if (isRep(o)) meta.push(ico('repeat'));
   if (o.reminder != null) meta.push(ico('bell'));
+  if (o.obra && o.obra.nombre) meta.push(ico('inbox') + esc(o.obra.nombre));
+  if (SRV) { const ppl = []; if (o.autor && o.autor !== YO) ppl.push(o.autor); (o.para || []).forEach(p => { if (p !== YO && p !== o.autor) ppl.push(p); }); if (ppl.length) meta.push(ppl.map(p => avHtml(p, 'sm')).join('')); if (o.privado) meta.push('🔒'); }
   if (o.notes) meta.push(esc(o.notes.slice(0, 70)));
   const past = o.occ === t && !o.isDone && o.time && (o.end ? minutes(o.end) : minutes(o.time) + 30) < nowMin();
   return '<div class="row' + (o.isDone ? ' done' : '') + (o.type === 'event' ? ' event' : '') + (past ? ' past' : '') + '" data-id="' + o.id + '" data-occ="' + (o.occ || '') + '" draggable="true">' +
@@ -267,7 +282,7 @@ function setupDnD(root) {
 
 /* ===== listas, todo, completadas ===== */
 function viewList() {
-  const l = listOf(state.listId); const all = state.items.filter(it => it.list === l.id);
+  const l = listOf(state.listId); const all = pool().filter(it => it.list === l.id);
   const pend = all.filter(it => isRep(it) || !it.done).map(it => occ(it, nextOcc(it))).sort(sortList);
   const done = all.filter(it => !isRep(it) && it.done).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
   let html = '<div class="list-head"><div class="big" style="background:' + l.color + '">' + ico('list') + '</div><div><h1>' + esc(l.name) + '</h1><p class="sub">' + pend.length + ' pendientes · ' + done.length + ' completadas</p></div><span style="flex:1"></span><button class="btn sm" data-act="edit-list">' + ico('edit') + 'Editar lista</button></div>';
@@ -280,7 +295,7 @@ function viewAll() {
   const t = todayYmd(); const f = FILTERS.some(x => x[0] === state.filter) ? state.filter : 'all';
   const filters = '<div class="filters">' + FILTERS.map(x => '<span class="chip' + (f === x[0] ? ' on' : '') + '" data-act="filter" data-v="' + x[0] + '">' + x[1] + '</span>').join('') + '</div>';
   if (f === 'done') {
-    const done = state.items.filter(it => !isRep(it) && it.done).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
+    const done = pool().filter(it => !isRep(it) && it.done).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
     const g = {}; done.forEach(it => { const k = it.doneAt ? ymd(new Date(it.doneAt)) : '0000'; (g[k] = g[k] || []).push(it); });
     return '<div class="hero"><div><div class="eyebrow">Tareas y reuniones</div><h1>Completadas</h1><p class="sub">' + done.length + ' completadas</p></div>' + (done.length ? '<button class="btn danger sm" data-act="clear-done">' + ico('trash') + 'Vaciar completadas</button>' : '') + '</div>' + filters +
       '<div class="card">' + (done.length ? Object.keys(g).sort().reverse().map(k => '<div class="group-title">' + (k === '0000' ? 'Antes' : relDay(k)) + '</div>' + g[k].map(it => rowHtml(occ(it, it.date))).join('')).join('') : '<div class="empty"><b>🧘</b>Aún no has completado nada</div>') + '</div>';
@@ -299,8 +314,39 @@ function viewAll() {
   return html;
 }
 function viewDone() { state.filter = 'done'; return viewAll(); }
+
+/* ===== modo empresa: equipo y obras ===== */
+function appsHtml() { return APPS.length ? '<div class="apps-row">' + APPS.map(a => '<a href="' + esc(a.url) + '" target="_blank" rel="noopener" title="' + esc(a.desc || '') + '"><span class="app-ic" style="background:' + esc(a.color) + '">' + esc(a.nombre.charAt(0)) + '</span>' + esc(a.nombre) + '</a>').join('') + '</div>' : ''; }
+function viewEquipo() {
+  const t = todayYmd();
+  let html = '<div class="hero"><div><div class="eyebrow">Proyecton</div><h1>Equipo</h1><p class="sub">Qué tiene cada uno hoy y esta semana</p></div></div>' + appsHtml();
+  html += '<div class="team-grid">' + state.equipo.map(p => {
+    const mine = state.items.filter(it => (it.autor || '') === p.usuario || (it.para || []).includes(p.usuario));
+    const hoy = mine.filter(it => occursOn(it, t)).map(it => occ(it, t)).sort(sortOcc);
+    const venc = mine.filter(it => it.date && it.date < t && !isRep(it) && !it.done && it.type === 'task').length;
+    let sem = 0; for (let i = 0; i < 7; i++) { const d = addDays(t, i); sem += mine.filter(it => occursOn(it, d) && !isDone(it, d)).length; }
+    const pend = mine.filter(it => isRep(it) || !it.done).length;
+    const st = (n, label, view, filter, cls) => '<span class="' + (cls || '') + '" data-act="ver-de" data-u="' + p.usuario + '" data-view="' + view + '"' + (filter ? ' data-filter="' + filter + '"' : '') + '><b>' + n + '</b>' + label + '</span>';
+    return '<section class="card team-card"><div class="th">' + avHtml(p.usuario) + '<b>' + esc(p.nombre) + (p.usuario === YO ? ' (tú)' : '') + '</b><button class="btn sm" data-act="asignar" data-u="' + p.usuario + '">' + ico('plus') + 'Asignar</button></div>' +
+      '<div class="stats3">' + st(venc, 'vencidas', 'all', 'overdue', venc ? 'red' : '') + st(hoy.filter(o => !o.isDone).length, 'hoy', 'today', '') + st(sem, 'semana', 'upcoming', '') + st(pend, 'pendientes', 'all', 'all') + '</div>' +
+      (hoy.length ? hoy.slice(0, 6).map(o => rowHtml(o, { noDate: true })).join('') + (hoy.length > 6 ? '<button class="btn sm ghost" data-act="ver-de" data-u="' + p.usuario + '" data-view="today">Ver todo lo de hoy</button>' : '') : '<div class="empty">Nada para hoy</div>') + '</section>';
+  }).join('') + '</div>';
+  return html;
+}
+const OBRA_ESTADOS = { borrador: 'Pendiente', enviada: 'Enviada', aceptada: 'Aceptada', perdida: 'Perdida' };
+function viewObras() {
+  let html = '<div class="hero"><div><div class="eyebrow">De Prestón · solo lectura</div><h1>Obras</h1><p class="sub">' + (state.obras ? state.obras.length + ' obras' : 'Cargando…') + (state.obrasAviso ? ' · ' + esc(state.obrasAviso) : '') + '</p></div><button class="btn sm" data-act="obras-recargar">' + ico('repeat') + 'Actualizar</button></div>';
+  html += '<div class="obras-q"><input id="obrasQ" placeholder="Buscar por nombre, calle, municipio, código o autor…" autocomplete="off" value="' + esc(state.obraQ) + '"><div class="seg">' + [['', 'Todas'], ['borrador', 'Pendientes'], ['enviada', 'Enviadas'], ['aceptada', 'Aceptadas']].map(x => '<button class="' + ((state.obraEstado || '') === x[0] ? 'on' : '') + '" data-act="obras-estado" data-v="' + x[0] + '">' + x[1] + '</button>').join('') + '</div></div>';
+  const q = norm(state.obraQ); const obras = (state.obras || []).filter(o => (!state.obraEstado || o.estado === state.obraEstado) && (!q || norm(o.nombre + ' ' + o.dir + ' ' + o.municipio + ' ' + o.exp + ' ' + o.autor).includes(q)));
+  html += '<div class="card">' + (obras.length ? obras.slice(0, 150).map(o => {
+    const its = state.items.filter(it => it.obra && it.obra.id === o.id && (isRep(it) || !it.done)); const sel = state.obraSel === o.id;
+    return '<div class="obra-row' + (sel ? ' on' : '') + '" data-act="obra-sel" data-id="' + esc(o.id) + '"><span class="estado ' + esc(o.estado) + '">' + (OBRA_ESTADOS[o.estado] || esc(o.estado) || '—') + '</span><div class="ob-body"><div class="ob-t">' + esc(o.nombre) + (o.exp ? ' <span class="pill">' + esc(o.exp) + '</span>' : '') + '</div><div class="ob-m">' + esc([o.dir, o.municipio, o.viviendas ? o.viviendas + ' viv.' : '', o.autor ? 'de ' + o.autor : ''].filter(Boolean).join(' · ')) + '</div></div>' + (its.length ? '<span class="pill blue">' + its.length + '</span>' : '') + '</div>' +
+      (sel ? '<div class="obra-det">' + (its.length ? its.map(it => rowHtml(occ(it, nextOcc(it)))).join('') : '<div class="empty" style="text-align:left;padding:4px 0 8px">Sin tareas ni reuniones de esta obra</div>') + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn sm" data-act="obra-nueva" data-id="' + esc(o.id) + '">' + ico('plus') + 'Tarea</button><button class="btn sm" data-act="obra-nueva" data-id="' + esc(o.id) + '" data-type="event">' + ico('users') + 'Reunión</button>' + (APPS.length ? '<a class="btn sm ghost" href="' + esc(APPS[0].url) + '" target="_blank" rel="noopener">Abrir Prestón</a>' : '') + '</div></div>' : '');
+  }).join('') + (obras.length > 150 ? '<div class="empty">Hay más: afina la búsqueda</div>' : '') : '<div class="empty">' + (state.obras ? 'Ninguna obra con ese filtro' : 'Cargando las obras de Prestón…') + '</div>') + '</div>';
+  return html;
+}
 function clearDone(listId) {
-  const list = state.items.filter(it => !isRep(it) && it.done && (!listId || it.list === listId)); if (!list.length) return;
+  const list = pool().filter(it => !isRep(it) && it.done && (!listId || it.list === listId)); if (!list.length) return;
   if (!confirm('¿Eliminar ' + list.length + ' completadas definitivamente?')) return;
   const ids = new Set(list.map(i => i.id)); state.items = state.items.filter(i => !ids.has(i.id)); save(); render();
 }
@@ -310,8 +356,14 @@ function renderSidebar() {
   $$('#nav .nav-btn, #tabbar [data-view]').forEach(b => b.classList.toggle('active', state.view === b.dataset.view));
   const t = todayYmd(); const n = itemsOn(t).filter(o => !o.isDone).length + overdue().length;
   $('#badgeToday').textContent = n || ''; $('#badgeAll').textContent = pendingAll().length || '';
-  $('#listNav').innerHTML = state.lists.map(l => { const c = state.items.filter(it => it.list === l.id && (isRep(it) || !it.done)).length; return '<button class="nav-btn' + (state.view === 'list' && state.listId === l.id ? ' active' : '') + '" data-list="' + l.id + '"><i class="dot" style="background:' + l.color + ';color:' + l.color + '"></i><span>' + esc(l.name) + '</span><span class="count">' + (c || '') + '</span></button>'; }).join('');
+  $('#listNav').innerHTML = state.lists.map(l => { const c = pool().filter(it => it.list === l.id && (isRep(it) || !it.done)).length; return '<button class="nav-btn' + (state.view === 'list' && state.listId === l.id ? ' active' : '') + '" data-list="' + l.id + '"><i class="dot" style="background:' + l.color + ';color:' + l.color + '"></i><span>' + esc(l.name) + '</span><span class="count">' + (c || '') + '</span></button>'; }).join('');
   const now = new Date(); $('#brandDate').textContent = cap(DAYS[now.getDay()]) + ' ' + now.getDate() + ' de ' + MONTHS[now.getMonth()];
+  if (SRV) {
+    $('#who').innerHTML = state.equipo.map(p => '<span class="av' + ((state.quien === 'yo' && p.usuario === YO) || state.quien === p.usuario ? ' on' : '') + '" style="background:' + p.color + '" data-act="quien" data-u="' + p.usuario + '" title="' + esc(p.nombre) + '">' + esc(p.nombre.charAt(0).toUpperCase()) + '</span>').join('') +
+      '<span class="av all' + (state.quien === 'todos' ? ' on' : '') + '" data-act="quien" data-u="todos" title="Todo el equipo">' + ico('users') + '</span>' +
+      '<span class="lbl">' + (state.quien === 'yo' ? 'Lo mío' : state.quien === 'todos' ? 'Todo el equipo' : esc(persona(state.quien).nombre)) + '</span>';
+    $('#appsNav').innerHTML = APPS.map(a => '<a class="nav-btn" href="' + esc(a.url) + '" target="_blank" rel="noopener" title="' + esc(a.desc || '') + '"><span class="app-ic" style="background:' + esc(a.color) + '">' + esc(a.nombre.charAt(0)) + '</span><span>' + esc(a.nombre) + '</span></a>').join('');
+  }
   document.title = n ? '(' + n + ') Clanedario' : 'Clanedario';
   renderMini(); renderNextUp();
 }
@@ -336,7 +388,7 @@ function renderNextUp() {
 }
 function render() {
   const v = $('#view'); const st = v.scrollTop;
-  v.innerHTML = state.view === 'today' ? viewToday() : state.view === 'upcoming' ? viewUpcoming() : state.view === 'calendar' ? viewCalendar() : state.view === 'list' ? viewList() : state.view === 'done' ? viewDone() : viewAll();
+  v.innerHTML = state.view === 'today' ? viewToday() : state.view === 'upcoming' ? viewUpcoming() : state.view === 'calendar' ? viewCalendar() : state.view === 'list' ? viewList() : state.view === 'done' ? viewDone() : state.view === 'equipo' ? viewEquipo() : state.view === 'obras' ? viewObras() : viewAll();
   v.scrollTop = st;
   if (state.view === 'calendar' && state.calMode === 'week') { const w = $('#weekScroll'); if (w) w.scrollTop = 7.5 * HOUR; }
   renderSidebar();
@@ -396,6 +448,9 @@ function openItem(id, occDate, preset) {
     '<div class="field"><label>Repetir</label>' + sel('repeat', REPEATS, d.repeat || 'none') + '</div>' +
     '<div class="field full prio"><label>Prioridad</label><div class="seg" data-seg="priority">' + [[0, 'Ninguna'], [1, 'Baja'], [2, 'Media'], [3, 'Alta']].map(p => '<button class="' + (Number(d.priority) === p[0] ? 'on' : '') + '" data-v="' + p[0] + '">' + p[1] + '</button>').join('') + '</div></div>' +
     '<div class="field full"><label>Lugar</label><input name="location" placeholder="Oficina, Teams, dirección…" value="' + esc(d.location || '') + '"></div>' +
+    (SRV ? '<div class="field full"><label>Para quién' + ((d.autor || YO) !== YO ? ' · creada por ' + esc(persona(d.autor).nombre) : '') + '</label><div class="who-pick" data-pick="para">' + state.equipo.filter(p => p.usuario !== (d.autor || YO)).map(p => '<span class="chip' + ((d.para || []).includes(p.usuario) ? ' on' : '') + '" data-u="' + p.usuario + '">' + avHtml(p.usuario, 'sm') + esc(p.nombre) + '</span>').join('') + '</div></div>' +
+      '<div class="field"><label>Obra</label><input name="obra" list="obrasList" placeholder="Busca la obra…" autocomplete="off" value="' + esc(d.obra ? d.obra.nombre : '') + '"><datalist id="obrasList">' + (state.obras || []).map(o => '<option value="' + esc(o.nombre) + '">').join('') + '</datalist></div>' +
+      '<div class="field"><label>Visibilidad</label><div class="toggle' + (d.privado ? ' on' : '') + '" data-act="toggle-priv"><span>Solo lo veo yo</span><i class="sw"></i></div></div>' : '') +
     '<div class="field full"><label>Notas</label><textarea name="notes" placeholder="Detalles, enlace de la videollamada, asistentes…">' + esc(d.notes || '') + '</textarea></div>' +
     '</div><div class="sheet-foot">' + (id ? '<button class="btn danger" data-act="sheet-del">' + ico('trash') + 'Eliminar</button>' : '') + '<span class="spacer"></span><span class="hint">Ctrl+Enter guarda</span><button class="btn" data-act="sheet-close">Cancelar</button><button class="btn primary" data-act="sheet-save">' + ico('check') + 'Guardar</button></div>';
   openSheet(html); setTimeout(() => { const i = $('#sheet .title-in'); if (i) { i.focus(); if (!id) i.select(); } }, 60);
@@ -405,6 +460,12 @@ function readSheet() {
   d.title = f('title').value.trim(); d.list = f('list').value; d.date = f('date').value || null; d.time = f('time').value || null; d.end = f('end').value || null;
   d.reminder = f('reminder').value === '' ? null : Number(f('reminder').value); d.repeat = f('repeat').value; d.location = f('location').value.trim(); d.notes = f('notes').value.trim();
   d.type = $('#sheet [data-seg="type"] .on').dataset.v; d.priority = Number($('#sheet [data-seg="priority"] .on').dataset.v);
+  if (SRV) {
+    d.para = $$('#sheet [data-pick="para"] .chip.on').map(c => c.dataset.u).filter(u => u !== (d.autor || YO));
+    const on = $('#sheet [name="obra"]'); const txt = on ? on.value.trim() : ''; const ob = txt ? (state.obras || []).find(o => o.nombre === txt) : null;
+    d.obra = txt ? { id: ob ? ob.id : (d.obra && d.obra.nombre === txt ? d.obra.id : ''), nombre: txt } : null;
+    const pv = $('#sheet [data-act="toggle-priv"]'); d.privado = !!(pv && pv.classList.contains('on'));
+  }
   if (!d.time) d.end = null;
   if (d.type === 'event' && d.time && !d.end) d.end = addMin(d.time, 60);
   if (d.end && d.time && minutes(d.end) <= minutes(d.time)) d.end = addMin(d.time, 60);
@@ -455,6 +516,7 @@ function openSettings() {
     '<div class="field full"><label>Datos</label><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" data-act="export-json">Copia de seguridad (.json)</button><button class="btn sm" data-act="import-json">Restaurar copia</button><button class="btn sm" data-act="export-ics">Exportar a Outlook / Google (.ics)</button></div><input type="file" id="importFile" accept=".json" class="hidden"></div>' +
     '<div class="field full"><label>Atajos</label><p class="hint"><code>N</code> añadir · <code>Ctrl+K</code> buscar · <code>Esc</code> cerrar · <code>Ctrl+Enter</code> guardar la ficha · <code>1</code>–<code>5</code> cambiar de vista</p></div>' +
     '<div class="field full"><label>Versión</label><p class="hint">' + APP_VERSION + ' · Si no ves la última, cierra la app y vuelve a abrirla (o pulsa F5).</p></div>' +
+    (SRV ? '<div class="field full"><label>Cuenta</label><p class="hint">Conectado como <b>' + esc(SRV.nombre) + '</b> en proyecton.es' + (SRV.lectura ? ' · solo lectura' : '') + (SRV.admin ? ' · administrador' : '') + ' · <a href="' + esc(SRV.salir || '../salir.php') + '">Salir</a></p></div>' : '') +
     '</div><div class="sheet-foot"><span class="spacer"></span><button class="btn primary" data-act="settings-save">Guardar</button></div>');
 }
 function download(name, text, type) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: type || 'application/octet-stream' })); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800); }
@@ -486,7 +548,7 @@ function closeSearch() { $('#searchWrap').classList.add('hidden'); }
 function renderSearch(q) {
   q = norm(q.trim()); const res = $('#searchRes');
   if (!q) { res.innerHTML = '<div class="empty">Busca en títulos, notas y lugares</div>'; return; }
-  const hits = state.items.filter(it => norm(it.title + ' ' + it.notes + ' ' + it.location).includes(q)).slice(0, 40).map(it => occ(it, nextOcc(it))).sort(sortList);
+  const hits = pool().filter(it => norm(it.title + ' ' + it.notes + ' ' + it.location + ' ' + (it.obra ? it.obra.nombre : '')).includes(q)).slice(0, 40).map(it => occ(it, nextOcc(it))).sort(sortList);
   res.innerHTML = hits.length ? hits.map(o => rowHtml(o)).join('') : '<div class="empty">Sin resultados para «' + esc(q) + '»</div>';
 }
 
@@ -519,7 +581,7 @@ function chime(kind) {
 /* ===== recordatorios ===== */
 function checkReminders() {
   const now = Date.now(); const t = todayYmd(); const days = [addDays(t, -1), t, addDays(t, 1), addDays(t, 2)]; let dirty = false;
-  state.items.forEach(it => {
+  state.items.filter(esMio).forEach(it => {
     if (it.reminder == null || it.reminder < 0 || !it.date) return;
     days.forEach(date => {
       if (!occursOn(it, date) || isDone(it, date)) return;
@@ -592,6 +654,14 @@ function onAction(e) {
     case 'export-json': exportJson(); break;
     case 'export-ics': exportIcs(); break;
     case 'import-json': $('#importFile').click(); break;
+    case 'quien': state.quien = el.dataset.u === YO ? 'yo' : el.dataset.u; render(); break;
+    case 'asignar': openItem(null, null, { date: todayYmd(), para: el.dataset.u === YO ? [] : [el.dataset.u] }); break;
+    case 'ver-de': state.quien = el.dataset.u === YO ? 'yo' : el.dataset.u; go(el.dataset.view, null, el.dataset.filter || null); break;
+    case 'obra-sel': state.obraSel = state.obraSel === el.dataset.id ? null : el.dataset.id; render(); break;
+    case 'obra-nueva': { const ob = (state.obras || []).find(o => o.id === el.dataset.id); openItem(null, null, Object.assign({ date: todayYmd(), obra: ob ? { id: ob.id, nombre: ob.nombre } : null }, el.dataset.type === 'event' ? { type: 'event', time: nextHour(), end: addMin(nextHour(), 60), reminder: 15, list: evList } : {})); break; }
+    case 'obras-recargar': state.obras = null; render(); srvObras(true); break;
+    case 'obras-estado': state.obraEstado = el.dataset.v; render(); break;
+    case 'toggle-priv': el.classList.toggle('on'); break;
     case 'more': openMoreSheet(); break;
     case 'more-go': closeSheet(); if (el.dataset.v === 'search') openSearch(); else if (el.dataset.v === 'theme') $('#themeBtn').click(); else if (el.dataset.v === 'settings') openSettings(); else go(el.dataset.v); break;
     case 'more-newlist': closeSheet(); openListSheet(null); break;
@@ -600,16 +670,29 @@ function onAction(e) {
 }
 function openMoreSheet() {
   const dark = document.documentElement.dataset.theme === 'dark';
-  const items = [['done', 'Completadas', 'done', 'var(--green)'], ['search', 'Buscar', 'search', 'var(--blue)'], ['theme', dark ? 'Tema claro' : 'Tema oscuro', dark ? 'sun' : 'moon', 'var(--indigo)'], ['settings', 'Ajustes', 'gear', 'var(--gray)']];
+  const items = (SRV ? [['equipo', 'Equipo', 'users', 'var(--orange)'], ['obras', 'Obras', 'pin', '#B8251B']] : []).concat([['done', 'Completadas', 'done', 'var(--green)'], ['search', 'Buscar', 'search', 'var(--blue)'], ['theme', dark ? 'Tema claro' : 'Tema oscuro', dark ? 'sun' : 'moon', 'var(--indigo)'], ['settings', 'Ajustes', 'gear', 'var(--gray)']]);
   openSheet('<div class="sheet-head"><h2>Más</h2><button class="icon-btn" data-act="sheet-close">' + ico('x') + '</button></div>' +
     '<div class="more-grid">' + items.map(x => '<button data-act="more-go" data-v="' + x[0] + '"><span class="nav-ic" style="background:' + x[3] + '">' + ico(x[2]) + '</span><span>' + x[1] + '</span></button>').join('') + '</div>' +
     '<div class="group-title">Mis listas <button class="btn sm ghost" data-act="more-newlist">' + ico('plus') + 'Nueva</button></div><div class="more-lists">' +
-    state.lists.map(l => { const c = state.items.filter(it => it.list === l.id && (isRep(it) || !it.done)).length; return '<button class="nav-btn" data-act="go-list" data-list="' + l.id + '"><i class="dot" style="background:' + l.color + ';color:' + l.color + '"></i><span>' + esc(l.name) + '</span><span class="count">' + (c || '') + '</span></button>'; }).join('') + '</div>');
+    state.lists.map(l => { const c = pool().filter(it => it.list === l.id && (isRep(it) || !it.done)).length; return '<button class="nav-btn" data-act="go-list" data-list="' + l.id + '"><i class="dot" style="background:' + l.color + ';color:' + l.color + '"></i><span>' + esc(l.name) + '</span><span class="count">' + (c || '') + '</span></button>'; }).join('') + '</div>' +
+    (APPS.length ? '<div class="group-title">Apps de Proyecton</div><div class="more-lists">' + APPS.map(a => '<a class="nav-btn" href="' + esc(a.url) + '" target="_blank" rel="noopener"><span class="app-ic" style="background:' + esc(a.color) + '">' + esc(a.nombre.charAt(0)) + '</span><span>' + esc(a.nombre) + '</span></a>').join('') + '</div>' : '') +
+    (SRV ? '<p class="hint" style="margin-top:10px">Conectado como <b>' + esc(SRV.nombre) + '</b> · <a href="' + esc(SRV.salir || '../salir.php') + '">Salir</a></p>' : ''));
 }
 
 /* ===== arranque ===== */
-function init() {
+async function init() {
   load(); applyTheme(); applyDensity(); updateNotifBtn();
+  if (SRV) {
+    $$('.srv-only').forEach(e => e.classList.remove('hidden'));
+    const sb = $('#salirBtn'); if (sb) sb.href = SRV.salir || '../salir.php';
+    if (!state.settings.name) state.settings.name = SRV.nombre || '';
+    let obrasT = null;
+    $('#view').addEventListener('input', e => { if (e.target.id !== 'obrasQ') return; state.obraQ = e.target.value; clearTimeout(obrasT); obrasT = setTimeout(() => { render(); const i = $('#obrasQ'); if (i) { i.focus(); const n = i.value.length; i.setSelectionRange(n, n); } }, 250); });
+    await srvCargar();
+    setInterval(srvLatido, 8000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') srvLatido(); });
+    if (SRV.lectura) toast('Usuario de solo lectura', 'Puedes mirar todo, pero los cambios no se guardan en el servidor', 'info', 6000);
+  }
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
   document.addEventListener('click', e => { if (menuEl && !menuEl.contains(e.target)) closeMenu(); }, true);
   document.body.addEventListener('click', onAction);
@@ -641,6 +724,7 @@ function init() {
   $('#searchWrap').addEventListener('click', e => { if (e.target.id === 'searchWrap') closeSearch(); });
   $('#sheetWrap').addEventListener('click', e => {
     if (e.target.id === 'sheetWrap') { closeSheet(); return; }
+    const pk = e.target.closest('[data-pick] .chip'); if (pk) { pk.classList.toggle('on'); return; }
     const sb = e.target.closest('[data-seg] button'); if (!sb) return;
     $$('button', sb.parentNode).forEach(b => b.classList.toggle('on', b === sb));
     if (sb.parentNode.dataset.seg === 'type' && sb.dataset.v === 'event') { const r = $('#sheet [name="reminder"]'); if (r && r.value === '') r.value = '15'; const tm = $('#sheet [name="time"]'); if (tm && !tm.value) tm.value = nextHour(); const en = $('#sheet [name="end"]'); if (en && !en.value) en.value = addMin(tm.value, 60); }
@@ -653,7 +737,7 @@ function init() {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && sheetState && sheetState.draft) { e.preventDefault(); saveSheet(); return; }
     if (inField) return;
     if (e.key === 'n' || e.key === 'N') { e.preventDefault(); qi.focus(); return; }
-    if (e.key >= '1' && e.key <= '5') go(['today', 'upcoming', 'calendar', 'all', 'done'][Number(e.key) - 1]);
+    if (e.key >= '1' && e.key <= '7') { const v = ['today', 'upcoming', 'calendar', 'all', 'done', 'equipo', 'obras'][Number(e.key) - 1]; if (v && (SRV || Number(e.key) <= 5)) go(v); }
   });
   setupDnD($('#view'));
   render(); renderQuickChips(); checkReminders();
@@ -663,4 +747,93 @@ function init() {
   window.addEventListener('storage', e => { if (e.key === KEY && !sheetState) { load(); render(); } });
   window.addEventListener('error', e => toast('Error en la app', e.message, 'info', 6000));
 }
+/* ===== modo empresa: sincronización con proyecton.es (api.php) ===== */
+const API = 'api.php';
+let srvSent = {}, srvListsSent = '', srvAjSent = '', srvTimer = null, srvBusy = false, srvPendiente = false, srvOk = true, srvAvisoLectura = 0;
+function srvFetch(op, body) {
+  const o = { credentials: 'same-origin' };
+  if (body) { o.method = 'POST'; o.headers = { 'Content-Type': 'application/json', 'X-Requested-With': 'clanedario' }; o.body = JSON.stringify(body); }
+  return fetch(API + '?op=' + op, o).then(r => {
+    if (r.status === 401) throw new Error('401');
+    if (r.status === 403) return r.json().then(j => { throw new Error('403:' + (j.error || '')); });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  });
+}
+function srvBanda(html, cls) { const b = $('#band'); if (!b) return; if (!html) { b.classList.add('hidden'); b.innerHTML = ''; return; } b.className = 'band ' + (cls || ''); b.innerHTML = html; }
+function srvFallo(e) {
+  const m = String((e && e.message) || e);
+  if (m === '401') srvBanda('Sesión caducada: lo que hagas se queda en este navegador hasta que vuelvas a entrar. <a class="btn sm" href="../entrar.php?next=' + encodeURIComponent(location.pathname) + '" target="_blank" rel="noopener">Volver a entrar</a>');
+  else if (m.indexOf('403:') === 0) srvBanda(esc(m.slice(4) || 'Sin permiso para cambiar eso.'), 'aviso');
+  else srvBanda('Sin conexión con proyecton.es: se reintenta solo; mientras tanto lo tuyo se guarda en este navegador.', 'aviso');
+  srvOk = false; srvPendiente = true;
+}
+function srvBien() { if (!srvOk) { srvBanda(''); srvOk = true; } }
+function normSrvItem(it) { const n = newItem(it); n.para = Array.isArray(it.para) ? it.para : []; return n; }
+async function srvCargar() {
+  try {
+    const d = await srvFetch('cargar');
+    state.equipo = d.equipo || []; state.items = (d.items || []).map(normSrvItem);
+    const hayListas = !!(d.listas && d.listas.length); if (hayListas) state.lists = d.listas;
+    if (d.ajustes && Object.keys(d.ajustes).length) Object.assign(state.settings, d.ajustes);
+    if (!state.settings.name) state.settings.name = (d.yo && d.yo.nombre) || '';
+    state.srvDesde = d.ahora || ''; srvSent = {}; state.items.forEach(it => { srvSent[it.id] = JSON.stringify(it); });
+    srvListsSent = hayListas ? JSON.stringify(state.lists) : ''; srvAjSent = JSON.stringify(state.settings);
+    srvOk = true; srvBanda(''); applyTheme(); applyDensity(); save();
+  } catch (e) { srvFallo(e); toast('Trabajando con la copia de este navegador', 'No se ha podido cargar del servidor', 'info', 4000); }
+  srvObras(false);
+}
+async function srvObras(force) {
+  if (!SRV || (state.obras && !force)) return;
+  try { const d = await srvFetch('obras'); state.obras = d.obras || []; state.obrasAviso = d.aviso || ''; }
+  catch (e) { state.obras = state.obras || []; state.obrasAviso = 'No se han podido leer las obras de Prestón'; }
+  if (state.view === 'obras') render();
+}
+function srvProgramar() {
+  if (!SRV) return;
+  if (SRV.lectura) { if (Date.now() - srvAvisoLectura > 60000) { srvAvisoLectura = Date.now(); toast('Solo lectura', 'Este cambio no se guarda en el servidor', 'info', 3000); } return; }
+  clearTimeout(srvTimer); srvTimer = setTimeout(srvFlush, 800);
+}
+async function srvFlush() {
+  if (!SRV || SRV.lectura) return;
+  if (srvBusy) { srvPendiente = true; return; }
+  srvBusy = true;
+  try {
+    const cambiados = state.items.filter(it => srvSent[it.id] !== JSON.stringify(it));
+    const vivos = new Set(state.items.map(it => it.id)); const borrados = Object.keys(srvSent).filter(id => !vivos.has(id));
+    if (cambiados.length) {
+      const r = await srvFetch('guardar', { items: cambiados });
+      (r.items || []).forEach(x => { const it = byId(x.id); if (it) { it.rev = x.rev; it.actualizado = x.actualizado; if (x.autor) it.autor = x.autor; srvSent[it.id] = JSON.stringify(it); } });
+      if (r.rechazados && r.rechazados.length) toast('Sin permiso', 'Alguna tarea de otra persona no se ha podido cambiar', 'info');
+      if (r.ahora) state.srvDesde = r.ahora;
+      saveCache();
+    }
+    if (borrados.length) { await srvFetch('borrar', { ids: borrados }); borrados.forEach(id => { delete srvSent[id]; }); }
+    const lj = JSON.stringify(state.lists); if (lj !== srvListsSent) { await srvFetch('listas', { listas: state.lists }); srvListsSent = lj; }
+    const aj = JSON.stringify(state.settings); if (aj !== srvAjSent) { await srvFetch('ajustes', { ajustes: state.settings }); srvAjSent = aj; }
+    srvPendiente = false; srvBien();
+  } catch (e) { srvFallo(e); }
+  srvBusy = false;
+}
+async function srvLatido() {
+  if (!SRV || document.hidden || srvBusy) return;
+  if (srvPendiente && !SRV.lectura) { await srvFlush(); if (!srvOk) return; }
+  try {
+    const d = await srvFetch('cambios&desde=' + encodeURIComponent(state.srvDesde || ''));
+    let tocado = false;
+    (d.items || []).forEach(x => {
+      const loc = byId(x.id); const sucio = loc && srvSent[x.id] !== JSON.stringify(loc);
+      if (x.borrado) { if (loc && !sucio) { state.items = state.items.filter(i => i.id !== x.id); delete srvSent[x.id]; tocado = true; } return; }
+      if (loc && sucio) return;
+      if (loc && (loc.rev || 0) >= (x.rev || 0)) return;
+      const n = normSrvItem(x);
+      if (loc) Object.assign(loc, n); else state.items.push(n);
+      srvSent[x.id] = JSON.stringify(loc || n); tocado = true;
+    });
+    if (d.ahora) state.srvDesde = d.ahora;
+    srvBien();
+    if (tocado) { saveCache(); if (!sheetState && !menuEl) render(); else renderSidebar(); }
+  } catch (e) { if (srvOk) srvFallo(e); }
+}
+
 document.addEventListener('DOMContentLoaded', init);
