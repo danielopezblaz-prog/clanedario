@@ -276,7 +276,7 @@ h2 .n{font-family:var(--font);font-size:11px;font-weight:700;color:var(--muted);
 .n{font-variant-numeric:tabular-nums}
 
 /* ---------- 9. Filas (tareas y reuniones) ---------- */
-.row{display:flex;align-items:center;gap:11px;padding:7px 10px;border-radius:var(--r-sm);position:relative;min-height:42px;transition:background .1s;animation:rowin .2s both}
+.row{display:flex;align-items:center;gap:11px;padding:7px 10px;border-radius:var(--r-sm);position:relative;min-height:42px;transition:background .1s}
 .row:hover{background:var(--hover)}
 .row + .row::before{content:"";position:absolute;left:39px;right:10px;top:0;height:1px;background:var(--line)}
 .row:hover::before,.row:hover + .row::before{opacity:0}
@@ -557,6 +557,57 @@ label.btn input{display:none}
 .barra[data-v="aceptada"] .b-track i{background:var(--ok)}
 .barra[data-v="perdida"] .b-track i{background:var(--faint)}
 
+/* ---------- 14b. Sin iconos (28-10-2026): menú, pie y cabecera solo con texto ---------- */
+.nav-btn{gap:8px;padding:0 12px}
+.nav-btn > span:first-child{font-weight:600}
+.nav-btn.active > span:first-child{font-weight:700}
+.foot-links{display:flex;gap:2px;flex-wrap:wrap;align-items:center}
+.me + .foot-links{flex-direction:column;align-items:flex-end;gap:0}
+.foot-link{font-size:12px;font-weight:600;color:var(--side-muted);padding:3px 8px;border-radius:6px;text-decoration:none;white-space:nowrap}
+.foot-link:hover{background:var(--side-hover);color:var(--side-ink)}
+.side-foot{align-items:center}
+#notifBtn.on{color:var(--accent);border-color:var(--accent)}
+.btn[data-n]:not([data-n=""])::after{content:attr(data-n);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--danger);color:#fff;font-size:10.5px;font-weight:800;display:inline-grid;place-items:center;line-height:1;margin-left:2px}
+.quick{padding-left:12px}
+.av.all:empty{display:none}
+.side-add{font-size:11px;font-weight:700;letter-spacing:0;text-transform:none;color:var(--side-muted);padding:2px 8px;border-radius:6px}
+.side-add:hover{background:var(--side-hover);color:var(--side-ink)}
+.prio-tag{font-size:10.5px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;padding:2px 6px;border-radius:5px}
+.prio-tag.p3{background:var(--danger-soft);color:var(--danger)}
+.prio-tag.p2{background:var(--warn-soft);color:var(--warn)}
+.kcard{flex-direction:column;align-items:flex-start;gap:4px;padding:12px 14px 13px;border-top:3px solid var(--line-2)}
+.kcard .kt{gap:2px}
+.kcard .kt span{order:0;font-size:11px;letter-spacing:.6px;text-transform:uppercase;font-weight:700}
+.kcard .kt b{order:1;font-size:26px}
+.kcard.t-danger{border-top-color:var(--danger)}
+.kcard.t-accent{border-top-color:var(--accent)}
+.kcard.t-warn{border-top-color:var(--warn)}
+.kcard.t-ok{border-top-color:var(--ok)}
+.toast .t-ic{display:none}
+.toast{border-left:4px solid var(--warn)}
+.toast.ok{border-left-color:#3DA06F}
+.toast.info{border-left-color:#8A8380}
+.more-grid .nav-ic{display:none}
+.more-grid button{justify-content:flex-start}
+.apps-nav .nav-btn::after{display:none}
+.apps-nav .app-ic{display:none}
+.apps-nav .nav-btn > span{font-weight:600}
+.apps-nav .nav-btn{color:var(--side-muted)}
+.apps-nav .nav-btn:hover{color:var(--side-ink)}
+.focus .btn svg{display:none}
+/* buscador y agrupar de cada apartado */
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:-4px 0 14px}
+.tsearch{flex:1;min-width:220px;height:36px;border-radius:var(--r-sm);border:1px solid var(--line-2);background:var(--surface);padding:0 12px;outline:none;font-size:13px;transition:border-color .12s,box-shadow .12s}
+.tsearch:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.filters .chip em{font-style:normal;font-weight:700;opacity:.6;margin-left:3px;font-variant-numeric:tabular-nums}
+/* semana del equipo: añadir por casilla */
+.semana thead th small{display:block;font-size:10.5px;font-weight:600;color:var(--muted);margin-top:1px;padding-left:24px}
+.semana td{position:relative;padding-bottom:26px}
+.cell-add{position:absolute;left:6px;right:6px;bottom:4px;height:20px;border-radius:5px;font-size:11px;font-weight:700;color:var(--accent);opacity:0;transition:opacity .12s,background .12s}
+.semana td:hover .cell-add,.cell-add:focus-visible{opacity:1}
+.cell-add:hover{background:var(--accent-soft)}
+.semana td.drop{background:var(--accent-soft)}
+
 /* ---------- 15. Móvil: barra inferior y hoja «Más» ---------- */
 .tabbar{display:none}
 .more-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0 6px}
@@ -621,9 +672,15 @@ label.btn input{display:none}
   .week,.week-body{grid-template-columns:40px repeat(7,minmax(0,1fr))}
   .wev{font-size:10px;padding:2px 3px;left:1px;right:1px}
   .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--surface);border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom))}
-  .tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0 4px;font-size:10.5px;font-weight:700;color:var(--muted);border-radius:10px}
-  .tabbar button svg{width:22px;height:22px}
+  .tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:44px;font-size:12.5px;font-weight:700;color:var(--muted);border-radius:10px;position:relative}
+  .tabbar button svg{display:none}
   .tabbar button.active{color:var(--accent)}
+  .tabbar button.active::before{content:"";position:absolute;top:-4px;left:25%;right:25%;height:3px;border-radius:0 0 3px 3px;background:var(--accent)}
+  #searchBtn{display:none}
+  #notifBtn{padding:0 9px}
+  #newBtn{width:auto;padding:0 12px}
+  #newBtn span{display:inline}
+  .quick{padding-left:10px}
   .overlay:not(.search-wrap){align-items:flex-end;justify-content:center}
   .sheet{width:100%;height:auto;max-height:92vh;border-left:0;border-top:1px solid var(--line);border-radius:18px 18px 0 0;padding:0 16px calc(16px + env(safe-area-inset-bottom));animation:up .25s cubic-bezier(.2,.8,.2,1) both}
   .sheet-foot{bottom:calc(-16px - env(safe-area-inset-bottom))}

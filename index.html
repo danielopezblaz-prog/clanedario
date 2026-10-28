@@ -69,27 +69,31 @@
     </a>
     <nav class="nav" id="nav">
       <div class="nav-label srv-only hidden">Mi trabajo</div>
-      <button class="nav-btn" data-view="today"><svg><use href="#i-sun"/></svg><span>Hoy</span><b class="badge" id="badgeToday"></b></button>
-      <button class="nav-btn" data-view="upcoming"><svg><use href="#i-next"/></svg><span>Próximos</span></button>
-      <button class="nav-btn" data-view="calendar"><svg><use href="#i-cal"/></svg><span>Calendario</span></button>
-      <button class="nav-btn" data-view="all"><svg><use href="#i-done"/></svg><span>Tareas</span><b class="badge soft" id="badgeAll"></b></button>
+      <button class="nav-btn" data-view="today"><span>Hoy</span><b class="badge" id="badgeToday"></b></button>
+      <button class="nav-btn" data-view="upcoming"><span>Próximos</span></button>
+      <button class="nav-btn" data-view="calendar"><span>Calendario</span></button>
+      <button class="nav-btn" data-view="all"><span>Tareas</span><b class="badge soft" id="badgeAll"></b></button>
       <div class="nav-label srv-only hidden">Equipo</div>
-      <button class="nav-btn srv-only hidden" data-view="equipo" data-views="equipo semana"><svg><use href="#i-users"/></svg><span>Equipo</span></button>
-      <button class="nav-btn srv-only hidden" data-view="panel"><svg><use href="#i-chart"/></svg><span>Panel</span></button>
+      <button class="nav-btn srv-only hidden" data-view="equipo"><span>Equipo</span></button>
+      <button class="nav-btn srv-only hidden" data-view="semana"><span>Semana del equipo</span></button>
+      <button class="nav-btn srv-only hidden" data-view="panel"><span>Panel</span></button>
       <div class="nav-label srv-only hidden">Obras</div>
-      <button class="nav-btn srv-only hidden" data-view="obras" data-views="obras obra tablero"><svg><use href="#i-building"/></svg><span>Obras</span></button>
-      <button class="nav-btn srv-only hidden" data-view="captacion"><svg><use href="#i-target"/></svg><span>Captación</span><b class="badge soft" id="badgeCrm"></b></button>
+      <button class="nav-btn srv-only hidden" data-view="obras" data-views="obras obra"><span>Obras</span></button>
+      <button class="nav-btn srv-only hidden" data-view="tablero"><span>Tablero</span></button>
+      <button class="nav-btn srv-only hidden" data-view="captacion"><span>Captación</span><b class="badge soft" id="badgeCrm"></b></button>
     </nav>
-    <div class="side-head"><span>Mis listas</span><button class="icon-btn sm" id="addList" title="Nueva lista"><svg><use href="#i-plus"/></svg></button></div>
+    <div class="side-head"><span>Mis listas</span><button class="side-add" id="addList" title="Crear una lista">Nueva</button></div>
     <nav class="nav lists" id="listNav"></nav>
     <div class="side-head srv-only hidden"><span>Apps de Proyecton</span></div>
     <nav class="nav apps-nav srv-only hidden" id="appsNav"></nav>
     <div class="mini" id="miniCal"></div>
     <div class="side-foot">
       <div class="me srv-only hidden" id="me"></div>
-      <button class="icon-btn" id="themeBtn" title="Tema claro / oscuro"><svg><use href="#i-moon"/></svg></button>
-      <button class="icon-btn" id="settingsBtn" title="Ajustes"><svg><use href="#i-gear"/></svg></button>
-      <a class="icon-btn srv-only hidden" id="salirBtn" title="Salir" href="#"><svg><use href="#i-exit"/></svg></a>
+      <div class="foot-links">
+        <button class="foot-link" id="themeBtn" title="Cambiar entre tema claro y oscuro">Tema oscuro</button>
+        <button class="foot-link" id="settingsBtn">Ajustes</button>
+        <a class="foot-link srv-only hidden" id="salirBtn" href="#">Salir</a>
+      </div>
     </div>
   </aside>
 
@@ -97,31 +101,30 @@
     <div class="band hidden" id="band"></div>
     <header class="topbar">
       <div class="quick" id="quick">
-        <svg class="quick-ic"><use href="#i-plus"/></svg>
         <input id="quickInput" type="text" autocomplete="off" spellcheck="false" enterkeyhint="done" placeholder="Añadir… p. ej. «Reunión con Dani mañana 10:30 #trabajo !alta»">
         <div class="quick-chips" id="quickChips"></div>
         <kbd class="quick-kbd">N</kbd>
       </div>
       <button class="scope srv-only hidden" id="scopeBtn" data-act="scope" title="De quién ves las tareas"></button>
       <div class="next-up" id="nextUp"></div>
-      <button class="icon-btn" id="searchBtn" title="Buscar (Ctrl+K)"><svg><use href="#i-search"/></svg></button>
-      <button class="icon-btn" id="notifBtn" title="Avisos"><svg><use href="#i-bell"/></svg></button>
-      <button class="btn primary" id="newBtn"><svg><use href="#i-plus"/></svg><span>Nuevo</span></button>
+      <button class="btn" id="searchBtn" title="Buscar en todo (Ctrl+K)">Buscar</button>
+      <button class="btn" id="notifBtn" title="Avisos">Avisos</button>
+      <button class="btn primary" id="newBtn"><span>Nuevo</span></button>
     </header>
     <section class="view" id="view"></section>
   </main>
 </div>
 
 <nav class="tabbar" id="tabbar">
-  <button data-view="today"><svg><use href="#i-sun"/></svg><span>Hoy</span></button>
-  <button data-view="upcoming"><svg><use href="#i-next"/></svg><span>Próximos</span></button>
-  <button data-view="calendar"><svg><use href="#i-cal"/></svg><span>Calendario</span></button>
-  <button data-view="all"><svg><use href="#i-done"/></svg><span>Tareas</span></button>
-  <button data-act="more"><svg><use href="#i-more"/></svg><span>Más</span></button>
+  <button data-view="today"><span>Hoy</span></button>
+  <button data-view="upcoming"><span>Próximos</span></button>
+  <button data-view="calendar"><span>Calendario</span></button>
+  <button data-view="all"><span>Tareas</span></button>
+  <button data-act="more"><span>Más</span></button>
 </nav>
 
 <div class="overlay hidden" id="sheetWrap"><div class="sheet" id="sheet" role="dialog"></div></div>
-<div class="overlay search-wrap hidden" id="searchWrap"><div class="search" id="search"><div class="search-in"><svg><use href="#i-search"/></svg><input id="searchInput" placeholder="Buscar tareas, reuniones, notas, obras…" autocomplete="off"><kbd>Esc</kbd></div><div class="search-res" id="searchRes"></div></div></div>
+<div class="overlay search-wrap hidden" id="searchWrap"><div class="search" id="search"><div class="search-in"><input id="searchInput" placeholder="Buscar tareas, reuniones, notas, obras…" autocomplete="off"><kbd>Esc</kbd></div><div class="search-res" id="searchRes"></div></div></div>
 <div class="toasts" id="toasts"></div>
 <!--USUARIO-->
 <script src="app.js"></script>

@@ -10,7 +10,7 @@ const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 
 const MONTHS_S = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const COLORS = ['#007AFF', '#AF52DE', '#34C759', '#FF9500', '#FF3B30', '#5AC8FA', '#FF2D55', '#5856D6', '#FFCC00', '#8E8E93'];
 const HOUR = 52;
-const APP_VERSION = '28-10-2026 · 11';
+const APP_VERSION = '28-10-2026 · 12';
 /* Modo empresa: index.php de proyecton.es inyecta CLAN_USUARIO (quién soy) y CLAN_APPS (lanzador). Sin eso, app personal. */
 const SRV = (window.CLAN_USUARIO && window.CLAN_USUARIO.usuario) ? window.CLAN_USUARIO : null;
 const YO = SRV ? SRV.usuario : '';
@@ -31,7 +31,10 @@ const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
 const fmtLong = s => { const d = fromYmd(s); return DAYS[d.getDay()] + ', ' + d.getDate() + ' de ' + MONTHS[d.getMonth()]; };
 const fmtShort = s => { const d = fromYmd(s); return d.getDate() + ' ' + MONTHS_S[d.getMonth()] + (d.getFullYear() !== new Date().getFullYear() ? ' ' + d.getFullYear() : ''); };
 function relDay(s) { if (!s) return 'Sin fecha'; const n = diffDays(todayYmd(), s); if (n === 0) return 'Hoy'; if (n === 1) return 'Mañana'; if (n === -1) return 'Ayer'; if (n > 1 && n < 7) return cap(DAYS[fromYmd(s).getDay()]); return fmtShort(s); }
-const ico = n => '<svg><use href="#i-' + n + '"/></svg>';
+/* Sin iconos decorativos ni emojis (pedido del usuario el 28-10-2026): solo quedan los de control
+   que no tienen una palabra mejor (casilla de hecho, cerrar, flechas de mes y semana, menú «…»). */
+const ICONOS = new Set(['check', 'more', 'left', 'right', 'x']);
+const ico = n => ICONOS.has(n) ? '<svg><use href="#i-' + n + '"/></svg>' : '';
 
 /* ===== datos ===== */
 const KEY = SRV ? 'clanedario.srv.' + SRV.usuario : 'agenda.v1';
@@ -59,7 +62,7 @@ function newItem(p) { return Object.assign({ id: uid(), type: 'task', title: '',
 function seed() {
   const t = todayYmd();
   state.items = [
-    newItem({ title: 'Bienvenido a Clanedario 👋', notes: 'Escribe arriba en lenguaje natural: «Reunión con Dani mañana 10:30 #trabajo !alta». Entiende hoy, mañana, lunes…, 15/11, «de 10 a 11», #lista, !alta / !media / !baja, «cada semana» y «avisa 30 min antes».', date: t, list: 'inbox', priority: 1 }),
+    newItem({ title: 'Bienvenido a Clanedario', notes: 'Escribe arriba en lenguaje natural: «Reunión con Dani mañana 10:30 #trabajo !alta». Entiende hoy, mañana, lunes…, 15/11, «de 10 a 11», #lista, !alta / !media / !baja, «cada semana» y «avisa 30 min antes».', date: t, list: 'inbox', priority: 1 }),
     newItem({ type: 'event', title: 'Reunión de ejemplo', date: addDays(t, 1), time: '10:30', end: '11:30', list: 'reuniones', location: 'Oficina', reminder: 15, notes: 'Puedes borrarla sin miedo.' }),
     newItem({ title: 'Revisar pendientes de la semana', date: addDays(t, 2), time: '09:00', list: 'trabajo', priority: 2, reminder: 0 })
   ];
@@ -162,21 +165,21 @@ function rowHtml(o, opts) {
   if (o.time) meta.push(ico('clock') + o.time + (o.end ? '–' + o.end : ''));
   meta.push('<i class="ldot" style="background:' + l.color + '"></i>' + esc(l.name));
   if (o.location) meta.push(ico('pin') + esc(o.location));
-  if (isRep(o)) meta.push(ico('repeat'));
-  if (o.reminder != null) meta.push(ico('bell'));
+  if (isRep(o)) meta.push('Se repite');
+  if (o.reminder != null) meta.push('Con aviso');
   if (o.obra && o.obra.nombre) meta.push(ico('inbox') + esc(o.obra.nombre));
-  if (o.comentarios && o.comentarios.length) meta.push('💬 ' + o.comentarios.length);
-  if (SRV) { const ppl = []; if (o.autor && o.autor !== YO) ppl.push(o.autor); (o.para || []).forEach(p => { if (p !== YO && p !== o.autor) ppl.push(p); }); if (ppl.length) meta.push(ppl.map(p => avHtml(p, 'sm')).join('')); if (o.privado) meta.push('🔒'); }
+  if (o.comentarios && o.comentarios.length) meta.push(o.comentarios.length + (o.comentarios.length === 1 ? ' comentario' : ' comentarios'));
+  if (SRV) { const ppl = []; if (o.autor && o.autor !== YO) ppl.push(o.autor); (o.para || []).forEach(p => { if (p !== YO && p !== o.autor) ppl.push(p); }); if (ppl.length) meta.push(ppl.map(p => avHtml(p, 'sm')).join('')); if (o.privado) meta.push('Privado'); }
   if (o.notes) meta.push(esc(o.notes.slice(0, 70)));
   const past = o.occ === t && !o.isDone && o.time && (o.end ? minutes(o.end) : minutes(o.time) + 30) < nowMin();
   return '<div class="row' + (o.isDone ? ' done' : '') + (o.type === 'event' ? ' event' : '') + (past ? ' past' : '') + '" data-id="' + o.id + '" data-occ="' + (o.occ || '') + '" draggable="true">' +
     '<button class="chk p' + (o.priority || 0) + '" data-act="toggle" title="Completar">' + ico('check') + '</button>' +
     '<div class="row-body" data-act="open"><div class="row-title">' + esc(o.title) + '</div><div class="row-meta">' + meta.join('<span>·</span>') + '</div></div>' +
-    '<div class="row-right">' + (o.priority ? '<svg class="flag p' + o.priority + '"><use href="#i-flag"/></svg>' : '') + '<button class="icon-btn sm del" data-act="menu" title="Opciones">' + ico('more') + '</button></div></div>';
+    '<div class="row-right">' + (o.priority >= 2 ? '<span class="prio-tag p' + o.priority + '">' + (o.priority === 3 ? 'Alta' : 'Media') + '</span>' : '') + '<button class="icon-btn sm del" data-act="menu" title="Opciones">' + ico('more') + '</button></div></div>';
 }
 function timelineHtml(date) {
   const items = itemsOn(date).filter(o => o.time); const isToday = date === todayYmd();
-  if (!items.length) return '<div class="empty"><b>🌤️</b>Nada con hora para ' + (isToday ? 'hoy' : 'este día') + '</div>';
+  if (!items.length) return '<div class="empty">Nada con hora para ' + (isToday ? 'hoy' : 'este día') + '</div>';
   const nm = nowMin(); let nextDone = false; let nowDrawn = !isToday; let out = '<div class="tl">';
   const hhmm = pad(Math.floor(nm / 60)) + ':' + pad(nm % 60);
   for (const o of items) {
@@ -196,7 +199,7 @@ function timelineHtml(date) {
 const stat = (c, n, label, view) => '<div class="stat ' + c + '" data-act="go" data-view="' + view + '"><b>' + n + '</b><span>' + label + '</span></div>';
 /* tarjeta de cifra (Hoy y Panel) */
 function kcard(tone, icon, n, label, view, filter) {
-  return '<button class="kcard t-' + tone + (n ? ' has' : '') + '"' + (view ? ' data-act="go" data-view="' + view + '"' + (filter ? ' data-filter="' + filter + '"' : '') : '') + '><span class="ki">' + ico(icon) + '</span><span class="kt"><b>' + n + '</b><span>' + label + '</span></span></button>';
+  return '<button class="kcard t-' + tone + (n ? ' has' : '') + '"' + (view ? ' data-act="go" data-view="' + view + '"' + (filter ? ' data-filter="' + filter + '"' : '') : '') + '><span class="kt"><span>' + label + '</span><b>' + n + '</b></span></button>';
 }
 /* «Siguiente»: la próxima cosa con hora de hoy, bien visible */
 function focusHtml() {
@@ -235,8 +238,8 @@ function viewToday() {
     '<div class="ring" style="--p:' + pct + '" title="Completado hoy: ' + doneN + ' de ' + items.length + '"><span>' + (items.length ? pct + '%' : '—') + '</span></div></div>';
   html += '<div class="kcards">' + kcard('danger', 'flag', od.length, 'Vencidas', 'all', 'overdue') + kcard('accent', 'sun', items.filter(o => !o.isDone).length, 'Para hoy', 'today') + kcard('warn', 'cal', week, 'Esta semana', 'upcoming') + kcard('ok', 'done', pendingAll().length, 'Pendientes en total', 'all', 'all') + '</div>';
   html += focusHtml();
-  html += '<div class="grid3"><section class="card c1"><div class="card-head"><h2>Agenda de hoy <span class="n">' + items.filter(o => o.time).length + '</span></h2><button class="btn sm" data-act="new-event">' + ico('plus') + 'Reunión</button></div>' + timelineHtml(t) + '</section>';
-  html += '<section class="card c2"><div class="card-head"><h2>Tareas <span class="n">' + (tasks.filter(o => !o.isDone).length + od.length) + '</span></h2><button class="btn sm" data-act="new-task">' + ico('plus') + 'Tarea</button></div>';
+  html += '<div class="grid3"><section class="card c1"><div class="card-head"><h2>Agenda de hoy <span class="n">' + items.filter(o => o.time).length + '</span></h2><button class="btn sm" data-act="new-event">' + 'Nueva reunión</button></div>' + timelineHtml(t) + '</section>';
+  html += '<section class="card c2"><div class="card-head"><h2>Tareas <span class="n">' + (tasks.filter(o => !o.isDone).length + od.length) + '</span></h2><button class="btn sm" data-act="new-task">' + 'Nueva tarea</button></div>';
   if (od.length) html += '<div class="group-title red">Vencidas <span>' + od.length + '</span></div>' + od.map(o => rowHtml(o)).join('');
   html += '<div class="group-title">Hoy <span>' + tasks.length + '</span></div>' + (tasks.length ? tasks.map(o => rowHtml(o, { noDate: true })).join('') : '<div class="empty">Sin tareas para hoy</div>') + inlineAdd('today', 'Añadir una tarea para hoy y pulsar Intro');
   if (und.length) html += '<div class="group-title">Sin fecha <span>' + und.length + '</span></div>' + und.slice(0, 5).map(o => rowHtml(o)).join('') + (und.length > 5 ? '<button class="btn sm ghost" data-act="go" data-view="all" data-filter="undated">Ver las ' + und.length + '</button>' : '');
@@ -248,12 +251,18 @@ function viewToday() {
   return html + '</section></div>';
 }
 function viewUpcoming() {
-  const t = todayYmd(); let html = '<div class="hero"><div><div class="eyebrow">Próximos 30 días</div><h1>Próximos</h1><p class="sub">Todo lo que viene, día a día</p></div></div>';
-  const od = overdue(); if (od.length) html += '<div class="card" style="margin-bottom:14px"><div class="group-title red" style="padding-top:0">Vencidas <span>' + od.length + '</span></div>' + od.map(o => rowHtml(o)).join('') + '</div>';
+  const t = todayYmd(); const f = state.upF || 'all'; const pasa = o => f === 'all' || o.type === f;
+  const F = [['all', 'Todo'], ['task', 'Tareas'], ['event', 'Reuniones']];
+  let html = '<div class="hero"><div><div class="eyebrow">Próximos 30 días</div><h1>Próximos</h1><p class="sub">Todo lo que viene, día a día. Arrastra una tarea a otro día para moverla.</p></div></div>';
+  html += '<div class="filters">' + F.map(x => '<span class="chip' + (f === x[0] ? ' on' : '') + '" data-act="up-filter" data-v="' + x[0] + '">' + x[1] + '</span>').join('') + '</div>';
+  const od = overdue().filter(pasa);
+  if (od.length) html += '<div class="card" style="margin-bottom:18px"><div class="card-head"><h2>Vencidas <span class="n">' + od.length + '</span></h2></div>' + od.map(o => rowHtml(o)).join('') + '</div>';
   for (let i = 0; i < 30; i++) {
-    const d = addDays(t, i); const items = itemsOn(d); if (!items.length && i > 6) continue;
-    html += '<div class="day-block" data-date="' + d + '"><div class="dh' + (i === 0 ? ' today' : '') + '"><b>' + relDay(d) + '</b><span>' + fmtLong(d) + '</span><button class="btn sm ghost add" data-act="new-on" data-date="' + d + '">' + ico('plus') + 'Añadir</button></div>' +
-      (items.length ? '<div class="card" style="padding:6px">' + items.map(o => rowHtml(o, { noDate: true })).join('') + '</div>' : '<div class="empty" style="padding:4px 10px 10px;text-align:left">Nada previsto</div>') + '</div>';
+    const d = addDays(t, i); const items = itemsOn(d).filter(pasa); if (!items.length && i > 6) continue;
+    const nr = items.filter(o => o.type === 'event').length, nt = items.length - nr;
+    const res = [nr ? nr + (nr === 1 ? ' reunión' : ' reuniones') : '', nt ? nt + (nt === 1 ? ' tarea' : ' tareas') : ''].filter(Boolean).join(' · ');
+    html += '<div class="day-block" data-date="' + d + '"><div class="dh' + (i === 0 ? ' today' : '') + '"><b>' + relDay(d) + '</b><span>' + fmtLong(d) + (res ? ' · ' + res : '') + '</span><button class="btn sm ghost add" data-act="new-on" data-date="' + d + '">Añadir</button></div>' +
+      (items.length ? '<div class="card">' + items.map(o => rowHtml(o, { noDate: true })).join('') + '</div>' : '<div class="empty" style="text-align:left">Nada previsto</div>') + '</div>';
   }
   return html;
 }
@@ -297,8 +306,8 @@ function weekHtml() {
 }
 function dayPanelHtml(d) {
   const items = itemsOn(d); const ev = state.lists.some(l => l.id === 'reuniones') ? 'reuniones' : 'inbox';
-  return '<aside class="day-panel"><div class="dp-head"><b>' + relDay(d) + '</b><span>' + fmtLong(d) + '</span></div>' + (items.length ? items.map(o => rowHtml(o, { noDate: true })).join('') : '<div class="empty"><b>🗓️</b>Nada para este día</div>') +
-    '<div style="margin-top:10px;display:flex;gap:6px"><button class="btn sm" data-act="new-on" data-date="' + d + '">' + ico('plus') + 'Tarea</button><button class="btn sm" data-act="new-on" data-date="' + d + '" data-type="event" data-list="' + ev + '">' + ico('users') + 'Reunión</button></div></aside>';
+  return '<aside class="day-panel"><div class="dp-head"><b>' + relDay(d) + '</b><span>' + fmtLong(d) + '</span></div>' + (items.length ? items.map(o => rowHtml(o, { noDate: true })).join('') : '<div class="empty">Nada para este día</div>') +
+    '<div style="margin-top:10px;display:flex;gap:6px"><button class="btn sm" data-act="new-on" data-date="' + d + '">' + 'Nueva tarea</button><button class="btn sm" data-act="new-on" data-date="' + d + '" data-type="event" data-list="' + ev + '">' + 'Nueva reunión</button></div></aside>';
 }
 function setupDnD(root) {
   root.addEventListener('dragstart', e => { const ob = e.target.closest('[data-obra]'); if (ob) { e.dataTransfer.setData('text/plain', 'obra|' + ob.dataset.obra); e.dataTransfer.effectAllowed = 'move'; return; } const el = e.target.closest('[data-id]'); if (!el) return; e.dataTransfer.setData('text/plain', el.dataset.id + '|' + (el.dataset.occ || '')); e.dataTransfer.effectAllowed = 'move'; });
@@ -320,31 +329,45 @@ function viewList() {
   const pend = all.filter(it => isRep(it) || !it.done).map(it => occ(it, nextOcc(it))).sort(sortList);
   const done = all.filter(it => !isRep(it) && it.done).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
   let html = '<div class="list-head"><div class="big" style="background:' + l.color + '">' + ico('list') + '</div><div><h1>' + esc(l.name) + '</h1><p class="sub">' + pend.length + ' pendientes · ' + done.length + ' completadas</p></div><span style="flex:1"></span><button class="btn sm" data-act="edit-list">' + ico('edit') + 'Editar lista</button></div>';
-  html += '<div class="card">' + (pend.length ? pend.map(o => rowHtml(o)).join('') : '<div class="empty"><b>✨</b>Todo hecho en esta lista</div>') + inlineAdd('list', 'Añadir a «' + l.name + '» y pulsar Intro') + '</div>';
+  html += '<div class="card">' + (pend.length ? pend.map(o => rowHtml(o)).join('') : '<div class="empty">Todo hecho en esta lista</div>') + inlineAdd('list', 'Añadir a «' + l.name + '» y pulsar Intro') + '</div>';
   if (done.length) html += '<div class="group-title">Completadas <button class="btn sm ghost" data-act="clear-done" data-list="' + l.id + '">Vaciar</button></div><div class="card" style="opacity:.85">' + done.slice(0, 20).map(it => rowHtml(occ(it, it.date))).join('') + '</div>';
   return html;
 }
 const FILTERS = [['all', 'Todo'], ['task', 'Tareas'], ['event', 'Reuniones'], ['prio', 'Importantes'], ['overdue', 'Vencidas'], ['undated', 'Sin fecha'], ['done', 'Completadas']];
 function viewAll() {
   const t = todayYmd(); const f = FILTERS.some(x => x[0] === state.filter) ? state.filter : 'all';
-  const filters = '<div class="filters">' + FILTERS.map(x => '<span class="chip' + (f === x[0] ? ' on' : '') + '" data-act="filter" data-v="' + x[0] + '">' + x[1] + '</span>').join('') + '</div>';
+  const q = norm(state.tq || ''); const casa = it => !q || norm(it.title + ' ' + (it.notes || '') + ' ' + (it.location || '') + ' ' + (it.obra ? it.obra.nombre : '')).includes(q);
+  const gb = state.tgroup || 'fecha';
+  const GB = [['fecha', 'Por fecha'], ['obra', 'Por obra']].concat(SRV ? [['persona', 'Por persona']] : []).concat([['lista', 'Por lista']]);
+  const filters = '<div class="filters">' + FILTERS.map(x => '<span class="chip' + (f === x[0] ? ' on' : '') + '" data-act="filter" data-v="' + x[0] + '">' + x[1] + '</span>').join('') + '</div>' +
+    '<div class="toolbar"><input class="tsearch" data-q="tq" placeholder="Buscar por título, notas, lugar u obra" value="' + esc(state.tq || '') + '" autocomplete="off">' +
+    (f === 'done' ? '' : '<div class="seg">' + GB.map(x => '<button class="' + (gb === x[0] ? 'on' : '') + '" data-act="t-group" data-v="' + x[0] + '">' + x[1] + '</button>').join('') + '</div>') + '</div>';
   if (f === 'done') {
-    const done = pool().filter(it => !isRep(it) && it.done).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
+    const done = pool().filter(it => !isRep(it) && it.done && casa(it)).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
     const g = {}; done.forEach(it => { const k = it.doneAt ? ymd(new Date(it.doneAt)) : '0000'; (g[k] = g[k] || []).push(it); });
     return '<div class="hero"><div><div class="eyebrow">Tareas y reuniones</div><h1>Completadas</h1><p class="sub">' + done.length + ' completadas</p></div>' + (done.length ? '<button class="btn danger sm" data-act="clear-done">' + ico('trash') + 'Vaciar completadas</button>' : '') + '</div>' + filters +
-      '<div class="card">' + (done.length ? Object.keys(g).sort().reverse().map(k => '<div class="group-title">' + (k === '0000' ? 'Antes' : relDay(k)) + '</div>' + g[k].map(it => rowHtml(occ(it, it.date))).join('')).join('') : '<div class="empty"><b>🧘</b>Aún no has completado nada</div>') + '</div>';
+      '<div class="card">' + (done.length ? Object.keys(g).sort().reverse().map(k => '<div class="group-title">' + (k === '0000' ? 'Antes' : relDay(k)) + '</div>' + g[k].map(it => rowHtml(occ(it, it.date))).join('')).join('') : '<div class="empty">Aún no has completado nada</div>') + '</div>';
   }
   let pend = pendingAll();
   if (f === 'task' || f === 'event') pend = pend.filter(it => it.type === f);
   if (f === 'prio') pend = pend.filter(it => it.priority >= 2);
   if (f === 'undated') pend = pend.filter(it => !it.date);
   if (f === 'overdue') pend = pend.filter(it => it.date && it.date < t && !isRep(it) && it.type === 'task');
-  const rows = pend.map(it => occ(it, nextOcc(it))).sort(sortList);
+  const rows = pend.filter(casa).map(it => occ(it, nextOcc(it))).sort(sortList);
   const title = FILTERS.find(x => x[0] === f)[1];
-  let html = '<div class="hero"><div><div class="eyebrow">Tareas y reuniones</div><h1>' + (f === 'all' ? 'Todo pendiente' : title) + '</h1><p class="sub">' + rows.length + ' elementos</p></div></div>' + filters;
-  const g = { 'Vencidas': [], 'Hoy': [], 'Esta semana': [], 'Más adelante': [], 'Sin fecha': [] };
-  rows.forEach(o => { if (!o.occ) g['Sin fecha'].push(o); else if (o.occ < t) g['Vencidas'].push(o); else if (o.occ === t) g['Hoy'].push(o); else if (diffDays(t, o.occ) < 7) g['Esta semana'].push(o); else g['Más adelante'].push(o); });
-  html += '<div class="card">' + Object.keys(g).filter(k => g[k].length).map(k => '<div class="group-title' + (k === 'Vencidas' ? ' red' : '') + '">' + k + ' <span>' + g[k].length + '</span></div>' + g[k].map(o => rowHtml(o)).join('')).join('') + (rows.length ? '' : '<div class="empty"><b>🎉</b>Nada pendiente</div>') + '</div>';
+  let html = '<div class="hero"><div><div class="eyebrow">Tareas y reuniones</div><h1>' + (f === 'all' ? 'Todo pendiente' : title) + '</h1><p class="sub">' + rows.length + ' elementos' + (q ? ' que contienen «' + esc(state.tq) + '»' : '') + '</p></div></div>' + filters;
+  let groups;
+  if (gb === 'fecha') {
+    const g = { 'Vencidas': [], 'Hoy': [], 'Esta semana': [], 'Más adelante': [], 'Sin fecha': [] };
+    rows.forEach(o => { if (!o.occ) g['Sin fecha'].push(o); else if (o.occ < t) g['Vencidas'].push(o); else if (o.occ === t) g['Hoy'].push(o); else if (diffDays(t, o.occ) < 7) g['Esta semana'].push(o); else g['Más adelante'].push(o); });
+    groups = Object.keys(g).filter(k => g[k].length).map(k => [k, g[k]]);
+  } else {
+    const sin = gb === 'obra' ? 'Sin obra' : gb === 'lista' ? 'Sin lista' : 'Sin asignar';
+    const key = o => gb === 'obra' ? (o.obra && o.obra.nombre) || '' : gb === 'lista' ? listOf(o.list).name : persona((o.para && o.para[0]) || o.autor || YO).nombre;
+    const g = {}; rows.forEach(o => { const k = key(o) || sin; (g[k] = g[k] || []).push(o); });
+    groups = Object.keys(g).sort((a, b) => (a === sin) - (b === sin) || a.localeCompare(b, 'es')).map(k => [k, g[k]]);
+  }
+  html += '<div class="card">' + groups.map(x => '<div class="group-title' + (x[0] === 'Vencidas' ? ' red' : '') + '">' + esc(x[0]) + ' <span>' + x[1].length + '</span></div>' + x[1].map(o => rowHtml(o)).join('')).join('') + (rows.length ? '' : '<div class="empty">' + (q ? 'Nada coincide con la búsqueda' : 'Nada pendiente') + '</div>') + '</div>';
   return html;
 }
 function viewDone() { state.filter = 'done'; return viewAll(); }
@@ -353,7 +376,7 @@ function viewDone() { state.filter = 'done'; return viewAll(); }
 function appsHtml() { return APPS.length ? '<div class="apps-row">' + APPS.map(a => '<a href="' + esc(a.url) + '" target="_blank" rel="noopener" title="' + esc(a.desc || '') + '"><span class="app-ic" style="background:' + esc(a.color) + '">' + esc(a.nombre.charAt(0)) + '</span>' + esc(a.nombre) + '</a>').join('') + '</div>' : ''; }
 function viewEquipo() {
   const t = todayYmd();
-  let html = '<div class="hero"><div><div class="eyebrow">Equipo</div><h1>Personas</h1><p class="sub">Qué tiene cada uno hoy y esta semana</p></div><div class="hero-r">' + tabsHtml([['equipo', 'Personas', 'users'], ['semana', 'Semana', 'grid']]) + '</div></div>';
+  let html = '<div class="hero"><div><div class="eyebrow">Equipo</div><h1>Equipo</h1><p class="sub">Qué tiene cada uno hoy y esta semana</p></div><div class="hero-r">' + '' + '</div></div>';
   html += '<div class="team-grid">' + state.equipo.map(p => {
     const mine = state.items.filter(it => (it.autor || '') === p.usuario || (it.para || []).includes(p.usuario));
     const hoy = mine.filter(it => occursOn(it, t)).map(it => occ(it, t)).sort(sortOcc);
@@ -369,13 +392,13 @@ function viewEquipo() {
 }
 const OBRA_ESTADOS = { borrador: 'Pendiente', enviada: 'Enviada', aceptada: 'Aceptada', perdida: 'Perdida' };
 function viewObras() {
-  let html = '<div class="hero"><div><div class="eyebrow">Obras · datos de Prestón (solo lectura)</div><h1>Obras</h1><p class="sub">' + (state.obras ? state.obras.length + ' obras' : 'Cargando…') + (state.obrasAviso ? ' · ' + esc(state.obrasAviso) : '') + '</p></div><div class="hero-r">' + tabsHtml([['obras', 'Lista', 'list'], ['tablero', 'Tablero', 'kanban']]) + '<button class="btn" data-act="obras-recargar">' + ico('repeat') + 'Actualizar</button></div></div>';
+  let html = '<div class="hero"><div><div class="eyebrow">Obras · datos de Prestón (solo lectura)</div><h1>Obras</h1><p class="sub">' + (state.obras ? state.obras.length + ' obras' : 'Cargando…') + (state.obrasAviso ? ' · ' + esc(state.obrasAviso) : '') + '</p></div><div class="hero-r">' + '' + '<button class="btn" data-act="obras-recargar">' + ico('repeat') + 'Actualizar</button></div></div>';
   html += '<div class="obras-q"><input id="obrasQ" placeholder="Buscar por nombre, calle, municipio, código o autor…" autocomplete="off" value="' + esc(state.obraQ) + '"><div class="seg">' + [['', 'Todas'], ['borrador', 'Pendientes'], ['enviada', 'Enviadas'], ['aceptada', 'Aceptadas']].map(x => '<button class="' + ((state.obraEstado || '') === x[0] ? 'on' : '') + '" data-act="obras-estado" data-v="' + x[0] + '">' + x[1] + '</button>').join('') + '</div></div>';
   const q = norm(state.obraQ); const obras = (state.obras || []).filter(o => (!state.obraEstado || o.estado === state.obraEstado) && (!q || norm(o.nombre + ' ' + o.dir + ' ' + o.municipio + ' ' + o.exp + ' ' + o.autor).includes(q)));
   html += '<div class="card">' + (obras.length ? obras.slice(0, 150).map(o => {
     const its = state.items.filter(it => it.obra && it.obra.id === o.id && (isRep(it) || !it.done)); const sel = state.obraSel === o.id;
     return '<div class="obra-row' + (sel ? ' on' : '') + '" data-act="obra-sel" data-id="' + esc(o.id) + '"><span class="estado ' + esc(o.estado) + '">' + (OBRA_ESTADOS[o.estado] || esc(o.estado) || '—') + '</span><div class="ob-body"><div class="ob-t">' + esc(o.nombre) + (o.exp ? ' <span class="pill">' + esc(o.exp) + '</span>' : '') + '</div><div class="ob-m">' + esc([o.dir, o.municipio, o.viviendas ? o.viviendas + ' viv.' : '', o.autor ? 'de ' + o.autor : ''].filter(Boolean).join(' · ')) + '</div></div>' + (its.length ? '<span class="pill blue">' + its.length + '</span>' : '') + '</div>' +
-      (sel ? '<div class="obra-det">' + (its.length ? its.map(it => rowHtml(occ(it, nextOcc(it)))).join('') : '<div class="empty" style="text-align:left;padding:4px 0 8px">Sin tareas ni reuniones de esta obra</div>') + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn sm" data-act="obra-nueva" data-id="' + esc(o.id) + '">' + ico('plus') + 'Tarea</button><button class="btn sm" data-act="obra-nueva" data-id="' + esc(o.id) + '" data-type="event">' + ico('users') + 'Reunión</button>' + (APPS.length ? '<a class="btn sm ghost" href="' + esc(APPS[0].url) + '" target="_blank" rel="noopener">Abrir Prestón</a>' : '') + '</div></div>' : '');
+      (sel ? '<div class="obra-det">' + (its.length ? its.map(it => rowHtml(occ(it, nextOcc(it)))).join('') : '<div class="empty" style="text-align:left;padding:4px 0 8px">Sin tareas ni reuniones de esta obra</div>') + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn sm" data-act="obra-nueva" data-id="' + esc(o.id) + '">' + 'Nueva tarea</button><button class="btn sm" data-act="obra-nueva" data-id="' + esc(o.id) + '" data-type="event">' + 'Nueva reunión</button>' + (APPS.length ? '<a class="btn sm ghost" href="' + esc(APPS[0].url) + '" target="_blank" rel="noopener">Abrir Prestón</a>' : '') + '</div></div>' : '');
   }).join('') + (obras.length > 150 ? '<div class="empty">Hay más: afina la búsqueda</div>' : '') : '<div class="empty">' + (state.obras ? 'Ninguna obra con ese filtro' : 'Cargando las obras de Prestón…') + '</div>') + '</div>';
   return html;
 }
@@ -395,7 +418,7 @@ function renderScope() {
 }
 function scopeItems() {
   const set = q => () => { state.quien = q; render(); };
-  const marca = q => state.quien === q ? ' <b class="ok-mark">✓</b>' : '';
+  const marca = q => state.quien === q ? ' <b class="ok-mark">actual</b>' : '';
   return [{ k: 'yo', label: avHtml(YO, 'sm') + '<span>Lo mío</span>' + marca('yo'), run: set('yo') }]
     .concat(state.equipo.filter(p => p.usuario !== YO).map(p => ({ k: 'u-' + p.usuario, label: avHtml(p.usuario, 'sm') + '<span>' + esc(p.nombre) + '</span>' + marca(p.usuario), run: set(p.usuario) })))
     .concat(['-', { k: 'todos', label: '<span class="av sm all">' + ico('users') + '</span><span>Todo el equipo</span>' + marca('todos'), run: set('todos') }]);
@@ -568,7 +591,7 @@ function openSettings() {
     '<div class="field full"><label>Datos</label><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" data-act="export-json">Copia de seguridad (.json)</button><button class="btn sm" data-act="import-json">Restaurar copia</button><button class="btn sm" data-act="export-ics">Exportar a Outlook / Google (.ics)</button></div><input type="file" id="importFile" accept=".json" class="hidden"></div>' +
     '<div class="field full"><label>Atajos</label><p class="hint"><code>N</code> añadir · <code>Ctrl+K</code> buscar · <code>Esc</code> cerrar · <code>Ctrl+Enter</code> guardar la ficha · <code>1</code>–<code>5</code> cambiar de vista</p></div>' +
     '<div class="field full"><label>Versión</label><p class="hint">' + APP_VERSION + ' · Si no ves la última, cierra la app y vuelve a abrirla (o pulsa F5).</p></div>' +
-    (SRV ? '<div class="field full"><label>Calendario del móvil y Outlook</label><div id="icsBox">' + (state.icsUrl ? '<input readonly value="' + esc(state.icsUrl) + '"><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn sm primary" data-act="ics-copiar">Copiar la dirección</button><a class="btn sm" href="' + esc(state.icsWebcal || state.icsUrl) + '">Abrir en el calendario</a><button class="btn sm ghost" data-act="ics-renovar">Renovar</button></div>' : '<button class="btn sm primary" data-act="ics-obtener">Obtener mi dirección de calendario</button>') + '</div><p class="hint" style="margin-top:6px">Suscríbete una vez y tus reuniones y tareas con fecha salen en el calendario de siempre, con sus avisos, aunque Clanedario esté cerrado. <b>iPhone:</b> Ajustes → Apps → Calendario → Cuentas → Añadir cuenta → Otro → Añadir calendario suscrito, y pega la dirección. <b>Android / Google:</b> en el ordenador, Google Calendar → Otros calendarios → + → Desde URL (Google tarda horas en refrescar). <b>Outlook:</b> Añadir calendario → Suscribirse desde la web. La dirección es personal: no la compartas.</p></div>' +
+    (SRV ? '<div class="field full"><label>Calendario del móvil y Outlook</label><div id="icsBox">' + (state.icsUrl ? '<input readonly value="' + esc(state.icsUrl) + '"><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn sm primary" data-act="ics-copiar">Copiar la dirección</button><a class="btn sm" href="' + esc(state.icsWebcal || state.icsUrl) + '">Abrir en el calendario</a><button class="btn sm ghost" data-act="ics-renovar">Renovar</button></div>' : '<button class="btn sm primary" data-act="ics-obtener">Obtener mi dirección de calendario</button>') + '</div><p class="hint" style="margin-top:6px">Suscríbete una vez y tus reuniones y tareas con fecha salen en el calendario de siempre, con sus avisos, aunque Clanedario esté cerrado. <b>iPhone:</b> Ajustes &gt; Apps &gt; Calendario &gt; Cuentas &gt; Añadir cuenta &gt; Otro &gt; Añadir calendario suscrito, y pega la dirección. <b>Android / Google:</b> en el ordenador, Google Calendar &gt; Otros calendarios &gt; + &gt; Desde URL (Google tarda horas en refrescar). <b>Outlook:</b> Añadir calendario &gt; Suscribirse desde la web. La dirección es personal: no la compartas.</p></div>' +
       '<div class="field full"><label>Cuenta</label><p class="hint">Conectado como <b>' + esc(SRV.nombre) + '</b> en proyecton.es' + (SRV.lectura ? ' · solo lectura' : '') + (SRV.admin ? ' · administrador' : '') + ' · <a href="' + esc(SRV.salir || '../salir.php') + '">Salir</a></p></div>' : '') +
     '</div><div class="sheet-foot"><span class="spacer"></span><button class="btn primary" data-act="settings-save">Guardar</button></div>');
 }
@@ -661,7 +684,7 @@ function askNotif() {
   Notification.requestPermission().then(p => { updateNotifBtn(); if (p === 'granted') toast('Avisos de Windows activados', 'Te avisaré aunque la ventana esté detrás', 'ok'); else toast('Avisos no activados', 'Actívalos desde el candado de la barra de direcciones', 'info'); if ($('#sheet [data-act="ask-notif"]')) openSettings(); });
 }
 function updateNotifBtn() { const b = $('#notifBtn'); const ok = ('Notification' in window) && Notification.permission === 'granted'; b.classList.toggle('on', ok); b.title = ok ? 'Avisos de Windows activados' : 'Activar avisos de Windows'; }
-function applyTheme() { const t = state.settings.theme; const dark = t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches); document.documentElement.dataset.theme = dark ? 'dark' : 'light'; $('#themeBtn').innerHTML = ico(dark ? 'sun' : 'moon'); }
+function applyTheme() { const t = state.settings.theme; const dark = t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches); document.documentElement.dataset.theme = dark ? 'dark' : 'light'; $('#themeBtn').textContent = dark ? 'Tema claro' : 'Tema oscuro'; }
 function toggleDone(id, date) {
   const it = byId(id); if (!it) return; let nowDone;
   if (isRep(it)) { it.doneDates = it.doneDates || {}; if (it.doneDates[date]) { delete it.doneDates[date]; nowDone = false; } else { it.doneDates[date] = Date.now(); nowDone = true; } }
@@ -723,6 +746,11 @@ function onAction(e) {
     case 'ics-copiar': { const i = $('#icsBox input'); if (i) { i.select(); try { navigator.clipboard.writeText(i.value); } catch (e) { document.execCommand('copy'); } toast('Copiada', 'Pégala en tu calendario como calendario suscrito', 'ok'); } break; }
     case 'obra-nueva': { const ob = (state.obras || []).find(o => o.id === el.dataset.id); openItem(null, null, Object.assign({ date: todayYmd(), obra: ob ? { id: ob.id, nombre: ob.nombre } : null }, el.dataset.type === 'event' ? { type: 'event', time: nextHour(), end: addMin(nextHour(), 60), reminder: 15, list: evList } : {})); break; }
     case 'obras-recargar': state.obras = null; render(); srvObras(true); break;
+    case 'up-filter': state.upF = el.dataset.v; render(); break;
+    case 't-group': state.tgroup = el.dataset.v; render(); break;
+    case 'tab-filter': state.tabF = el.dataset.v; render(); break;
+    case 'cap-filter': state.capF = el.dataset.v; render(); break;
+    case 'semana-add': openItem(null, null, { date: el.dataset.date, para: el.dataset.u === YO ? [] : [el.dataset.u], list: state.lists.some(l => l.id === 'trabajo') ? 'trabajo' : 'inbox' }); break;
     case 'obras-estado': state.obraEstado = el.dataset.v; render(); break;
     case 'obras-ir': state.obraEstado = el.dataset.v; go('obras'); break;
     case 'toggle-priv': el.classList.toggle('on'); break;
@@ -766,6 +794,9 @@ async function init() {
   document.body.addEventListener('click', onAction);
   $('#view').addEventListener('contextmenu', e => { const row = e.target.closest('[data-id]'); if (!row) return; e.preventDefault(); itemMenu(row.dataset.id, row.dataset.occ || null, e.clientX, e.clientY); });
   $('#view').addEventListener('scroll', closeMenu);
+  /* buscadores de cada apartado (data-q = clave del estado): se repinta al dejar de escribir y se devuelve el foco */
+  let qT = null;
+  $('#view').addEventListener('input', e => { const k = e.target.dataset && e.target.dataset.q; if (!k) return; state[k] = e.target.value; clearTimeout(qT); qT = setTimeout(() => { render(); const i = $('#view [data-q="' + k + '"]'); if (i) { i.focus(); const n = i.value.length; i.setSelectionRange(n, n); } }, 220); });
   $('#nav').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) go(b.dataset.view, null, b.dataset.view === 'all' ? 'all' : null); });
   $('#listNav').addEventListener('click', e => { const b = e.target.closest('[data-list]'); if (b) go('list', b.dataset.list); });
   $('#tabbar').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) go(b.dataset.view, null, b.dataset.view === 'all' ? 'all' : null); });
@@ -781,7 +812,7 @@ async function init() {
   $('#addList').addEventListener('click', () => openListSheet(null));
   $('#themeBtn').addEventListener('click', () => { state.settings.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; save(); applyTheme(); });
   $('#notifBtn').addEventListener('click', SRV ? openNovedades : askNotif);
-  if (SRV) $('#notifBtn').title = 'Novedades del equipo';
+  if (SRV) { $('#notifBtn').title = 'Lo que te asignan, te comentan o cambian tus compañeros'; $('#notifBtn').textContent = 'Novedades'; }
   $('#settingsBtn').addEventListener('click', openSettings);
   $('#searchBtn').addEventListener('click', openSearch);
   $('#newBtn').addEventListener('click', () => openItem(null, null, { date: state.view === 'calendar' ? state.sel : todayYmd(), list: state.view === 'list' ? state.listId : 'inbox' }));
@@ -839,8 +870,8 @@ function viewObra() {
   const done = its.filter(it => !isRep(it) && it.done).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
   const maps = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([o.dir, o.municipio].filter(Boolean).join(', '));
   const ETQ = { dir: 'Dirección', municipio: 'Municipio', muni: 'Municipio', promotor: 'Promotor / administración', viviendas: 'Viviendas', plantas: 'Plantas', estado: 'Estado', f_estado: 'Fecha del estado', exp: 'Código', autor: 'Autor', fase: 'Fase en Prestón', com: 'Comunidad', updated_at: 'Actualizada', creada: 'Creada', created_at: 'Creada', gg: 'GG %', bi: 'BI %', iva: 'IVA %', anno: 'Año', ano: 'Año', locales: 'Locales (m²)', rev: 'Revisión' };
-  let html = '<div class="hero"><div><div class="eyebrow"><span data-act="go" data-view="obras" style="cursor:pointer">← Obras</span> · ' + (OBRA_ESTADOS[o.estado] || esc(o.estado) || '—') + '</div><h1>' + esc(o.nombre) + (o.exp ? ' <span class="pill">' + esc(o.exp) + '</span>' : '') + '</h1><p class="sub">' + esc([o.dir, o.municipio, o.viviendas ? o.viviendas + ' viviendas' : '', o.autor ? 'la lleva ' + o.autor : ''].filter(Boolean).join(' · ')) + '</p></div>' +
-    '<div class="hero-r"><a class="btn" href="' + maps + '" target="_blank" rel="noopener">' + ico('pin') + 'Mapa</a>' + (APPS.length ? '<a class="btn" href="' + esc(APPS[0].url) + '" target="_blank" rel="noopener">' + ico('ext') + 'Abrir en Prestón</a>' : '') + '<button class="btn" data-act="obra-nueva" data-id="' + esc(o.id) + '" data-type="event">' + ico('users') + 'Reunión</button><button class="btn primary" data-act="obra-nueva" data-id="' + esc(o.id) + '">' + ico('plus') + 'Tarea</button></div></div>';
+  let html = '<div class="hero"><div><div class="eyebrow"><span data-act="go" data-view="obras" style="cursor:pointer">Obras</span> · ' + (OBRA_ESTADOS[o.estado] || esc(o.estado) || '—') + '</div><h1>' + esc(o.nombre) + (o.exp ? ' <span class="pill">' + esc(o.exp) + '</span>' : '') + '</h1><p class="sub">' + esc([o.dir, o.municipio, o.viviendas ? o.viviendas + ' viviendas' : '', o.autor ? 'la lleva ' + o.autor : ''].filter(Boolean).join(' · ')) + '</p></div>' +
+    '<div class="hero-r"><a class="btn" href="' + maps + '" target="_blank" rel="noopener">' + ico('pin') + 'Mapa</a>' + (APPS.length ? '<a class="btn" href="' + esc(APPS[0].url) + '" target="_blank" rel="noopener">' + ico('ext') + 'Abrir en Prestón</a>' : '') + '<button class="btn" data-act="obra-nueva" data-id="' + esc(o.id) + '" data-type="event">' + 'Nueva reunión</button><button class="btn primary" data-act="obra-nueva" data-id="' + esc(o.id) + '">' + 'Nueva tarea</button></div></div>';
   html += '<div class="grid2"><section class="card"><div class="card-head"><h2>Tareas y reuniones <span class="n">' + pend.length + '</span></h2></div>' + (pend.length ? pend.map(x => rowHtml(x)).join('') : '<div class="empty">Nada pendiente en esta obra</div>') + inlineAdd('obra', 'Añadir una tarea a esta obra y pulsar Intro', ' data-obra="' + esc(o.id) + '"') +
     (done.length ? '<div class="group-title">Hechas <span>' + done.length + '</span></div>' + done.slice(0, 10).map(it => rowHtml(occ(it, it.date))).join('') : '') +
     '<div class="group-title">Sugerencias para esta fase</div>' + (SUGERENCIAS[o.estado] || ['Apuntar el siguiente paso']).map(s => '<div class="row"><span class="chk" style="border-style:dashed;opacity:.6"></span><div class="row-body"><div class="row-title" style="font-weight:500">' + esc(s) + '</div></div><button class="btn sm ghost" data-act="obra-sugerir" data-id="' + esc(o.id) + '" data-t="' + esc(s) + '">' + ico('plus') + 'Añadir</button></div>').join('') + '</section>';
@@ -871,7 +902,7 @@ function openNovedades() {
   openSheet('<div class="sheet-head"><h2>Novedades</h2><button class="icon-btn" data-act="sheet-close">' + ico('x') + '</button></div>' +
     (n.length ? n.map(x => { const sis = x.quien === 'sistema' || !x.quien; const q = sis ? 'Clanedario' : persona(x.quien).nombre; const verbo = x.tipo === 'comentario' ? 'comentó en' : x.tipo === 'asignada' ? 'te asignó' : x.tipo === 'sistema' ? 'creó sola' : 'cambió';
       return '<div class="row" data-id="' + x.it.id + '" data-occ="' + (x.it.date || '') + '">' + (sis ? '<span class="av sm all">' + ico('repeat') + '</span>' : avHtml(x.quien, 'sm')) + '<div class="row-body" data-act="open"><div class="row-title"><b>' + esc(q) + '</b> ' + verbo + ': ' + esc(x.it.title) + '</div><div class="row-meta">' + esc(fmtFecha(x.fecha)) + (x.texto ? ' · «' + esc(x.texto.slice(0, 80)) + '»' : '') + (x.it.obra && x.it.obra.nombre ? ' · ' + esc(x.it.obra.nombre) : '') + '</div></div></div>'; }).join('')
-      : '<div class="empty"><b>✓</b>Nada nuevo desde la última vez</div>') +
+      : '<div class="empty">Nada nuevo desde la última vez</div>') +
     '<div class="sheet-foot"><span class="hint">Lo que te asignan, te comentan o cambian tus compañeros</span><span class="spacer"></span><button class="btn" data-act="novedades-visto">Marcar todo como visto</button></div>');
 }
 
@@ -880,12 +911,16 @@ const FASES = [['entrada', 'Entrada'], ['proceso', 'En proceso'], ['revision', '
 function viewTablero() {
   const obras = state.obras || []; const t = todayYmd(); const cols = { entrada: [], proceso: [], revision: [], enviado: [] };
   const faseDe = o => { const f = o.fase_clan || o.fase || ''; return (f === 'proceso' || f === 'revision') ? f : 'entrada'; };
-  obras.forEach(o => { if (o.estado === 'borrador') cols[faseDe(o)].push(o); else if (o.estado === 'enviada') cols.enviado.push(o); });
-  cols.enviado = cols.enviado.slice(0, 25);
+  const vivas = obras.filter(o => o.estado === 'borrador' || o.estado === 'enviada');
+  const autores = [...new Set(vivas.map(o => (o.autor || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+  const fa = state.tabF || ''; const deQuien = o => !fa || norm(o.autor) === norm(fa);
+  vivas.filter(deQuien).forEach(o => { if (o.estado === 'borrador') cols[faseDe(o)].push(o); else cols.enviado.push(o); });
+  const enviadasTotal = cols.enviado.length; cols.enviado = cols.enviado.slice(0, 30);
   const card = o => { const n = state.items.filter(it => it.obra && it.obra.id === o.id && (isRep(it) || !it.done)).length; const p = buscaPersona(o.autor); const ref = (o.fase_fecha || o.actualizado || '').slice(0, 10); const dias = /^\d{4}-\d{2}-\d{2}$/.test(ref) ? diffDays(ref, t) : 0;
     return '<div class="tcard" draggable="' + (o.estado === 'borrador' ? 'true' : 'false') + '" data-obra="' + esc(o.id) + '" data-act="obra-sel" data-id="' + esc(o.id) + '"><div class="tc-t">' + esc(o.nombre) + '</div><div class="tc-m">' + (o.exp ? '<span class="pill">' + esc(o.exp) + '</span>' : '') + (p ? avHtml(p.usuario, 'sm') : (o.autor ? esc(o.autor) : '')) + (n ? '<span class="pill blue">' + n + ' tareas</span>' : '') + (dias > 0 ? '<span class="tc-d">' + dias + ' d</span>' : '') + '</div></div>'; };
-  let html = '<div class="hero"><div><div class="eyebrow">Obras · presupuestos pendientes</div><h1>Tablero</h1><p class="sub">Arrastra cada presupuesto a su fase. «Enviado» lo marca Prestón solo al enviarlo.</p></div><div class="hero-r">' + tabsHtml([['obras', 'Lista', 'list'], ['tablero', 'Tablero', 'kanban']]) + '</div></div>';
-  html += '<div class="tablero">' + FASES.map(f => '<div class="tcol" data-fase="' + f[0] + '"><div class="tcol-h"><span>' + f[1] + '</span><span>' + cols[f[0]].length + '</span></div>' + (cols[f[0]].length ? cols[f[0]].map(card).join('') : '<div class="empty">—</div>') + '</div>').join('') + '</div>';
+  let html = '<div class="hero"><div><div class="eyebrow">Obras · presupuestos</div><h1>Tablero</h1><p class="sub">Arrastra cada presupuesto a su fase. «Enviado» lo marca Prestón solo al enviarlo. Pulsa una tarjeta para abrir la obra.</p></div></div>';
+  html += '<div class="filters"><span class="chip' + (!fa ? ' on' : '') + '" data-act="tab-filter" data-v="">Todos</span>' + autores.map(a => '<span class="chip' + (norm(fa) === norm(a) ? ' on' : '') + '" data-act="tab-filter" data-v="' + esc(a) + '">' + esc(cap(a.toLowerCase())) + '</span>').join('') + '</div>';
+  html += '<div class="tablero">' + FASES.map(f => { const n = f[0] === 'enviado' ? enviadasTotal : cols[f[0]].length; return '<div class="tcol" data-fase="' + f[0] + '"><div class="tcol-h"><span>' + f[1] + '</span><span>' + n + '</span></div>' + (cols[f[0]].length ? cols[f[0]].map(card).join('') + (f[0] === 'enviado' && n > cols.enviado.length ? '<div class="empty">Y ' + (n - cols.enviado.length) + ' más en Obras</div>' : '') : '<div class="empty">Nada en esta fase</div>') + '</div>'; }).join('') + '</div>';
   return html;
 }
 function moverFase(obra, fase) {
@@ -895,9 +930,14 @@ function moverFase(obra, fase) {
 }
 function viewSemana() {
   const a = weekStart(state.cursor); const days = []; for (let i = 0; i < 7; i++) days.push(addDays(a, i)); const t = todayYmd();
-  let html = '<div class="hero"><div><div class="eyebrow">Equipo</div><h1>Semana del equipo</h1><p class="sub">' + weekTitle() + ' · una columna por persona</p></div><div class="hero-r"><div class="pager"><button class="icon-btn" data-act="cal-prev" title="Semana anterior">' + ico('left') + '</button><button class="btn sm" data-act="cal-today">Hoy</button><button class="icon-btn" data-act="cal-next" title="Semana siguiente">' + ico('right') + '</button></div>' + tabsHtml([['equipo', 'Personas', 'users'], ['semana', 'Semana', 'grid']]) + '</div></div>';
-  html += '<div class="semana"><table><thead><tr><th></th>' + state.equipo.map(p => '<th>' + avHtml(p.usuario, 'sm') + ' ' + esc(p.nombre) + '</th>').join('') + '</tr></thead><tbody>' +
-    days.map(d => { const dd = fromYmd(d); return '<tr class="' + (d === t ? 'hoy' : '') + '"><th><b>' + DAYS_S[dd.getDay()] + '</b> ' + dd.getDate() + '</th>' + state.equipo.map(p => { const its = state.items.filter(it => ((it.autor || '') === p.usuario || (it.para || []).includes(p.usuario)) && occursOn(it, d)).map(it => occ(it, d)).sort(sortOcc); return '<td>' + its.map(o => '<div class="sm-it' + (o.isDone ? ' done' : '') + (o.type === 'event' ? ' ev' : '') + '" data-id="' + o.id + '" data-occ="' + d + '" data-act="open" title="' + esc(o.title) + '">' + (o.time ? '<b>' + o.time + '</b> ' : '') + esc(o.title) + '</div>').join('') + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
+  let html = '<div class="hero"><div><div class="eyebrow">Equipo</div><h1>Semana del equipo</h1><p class="sub">' + weekTitle() + ' · una columna por persona</p></div><div class="hero-r"><div class="pager"><button class="icon-btn" data-act="cal-prev" title="Semana anterior">' + ico('left') + '</button><button class="btn sm" data-act="cal-today">Hoy</button><button class="icon-btn" data-act="cal-next" title="Semana siguiente">' + ico('right') + '</button></div>' + '' + '</div></div>';
+  const de = p => it => (it.autor || '') === p.usuario || (it.para || []).includes(p.usuario);
+  const semanaDe = p => days.reduce((n, d) => n + state.items.filter(it => de(p)(it) && occursOn(it, d) && !isDone(it, d)).length, 0);
+  const puede = !(SRV && SRV.lectura);
+  html += '<div class="semana"><table><thead><tr><th></th>' + state.equipo.map(p => { const n = semanaDe(p); return '<th>' + avHtml(p.usuario, 'sm') + esc(p.nombre) + '<small>' + (n ? n + ' pendientes' : 'libre') + '</small></th>'; }).join('') + '</tr></thead><tbody>' +
+    days.map(d => { const dd = fromYmd(d); return '<tr class="' + (d === t ? 'hoy' : '') + '"><th><b>' + cap(DAYS_S[dd.getDay()]) + '</b> ' + dd.getDate() + '</th>' + state.equipo.map(p => { const its = state.items.filter(it => de(p)(it) && occursOn(it, d)).map(it => occ(it, d)).sort(sortOcc);
+      return '<td data-date="' + d + '">' + its.map(o => '<div class="sm-it' + (o.isDone ? ' done' : '') + (o.type === 'event' ? ' ev' : '') + '" data-id="' + o.id + '" data-occ="' + d + '" data-act="open" draggable="true" title="' + esc(o.title) + (o.obra && o.obra.nombre ? ' · ' + esc(o.obra.nombre) : '') + '">' + (o.time ? '<b>' + o.time + '</b> ' : '') + esc(o.title) + '</div>').join('') + (puede ? '<button class="cell-add" data-act="semana-add" data-date="' + d + '" data-u="' + p.usuario + '">Añadir</button>' : '') + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>' +
+    '<p class="hint" style="margin-top:10px">Pulsa «Añadir» en una casilla para asignar algo a esa persona ese día. Arrastra una tarea a otra fila para cambiarla de día.</p>';
   return html;
 }
 function viewPanel() {
@@ -920,13 +960,19 @@ function viewPanel() {
 function crmRows(list) {
   const t = todayYmd();
   return list.map(s => { const venc = s.proxima && s.proxima < t; const estado = s.estado === 'nueva' ? 'nueva ' + fmtFecha(s.fecha) : (s.proxima ? (venc ? 'VENCIDA · ' : '') + relDay(s.proxima) + (s.proxima_txt ? ': ' + s.proxima_txt : '') : s.estado);
-    return '<div class="row crm"><span class="av sm" style="background:' + (s.estado === 'nueva' ? 'var(--red)' : venc ? 'var(--orange)' : 'var(--gray)') + '">' + (s.estado === 'nueva' ? 'N' : 'C') + '</span><div class="row-body"><div class="row-title">' + esc(s.nombre || 'Sin nombre') + (s.telefono ? ' · <a href="tel:' + esc(s.telefono) + '">' + esc(s.telefono) + '</a>' : '') + '</div><div class="row-meta">' + esc([s.direccion, s.campana, estado, s.asignado ? 'lo lleva ' + s.asignado : 'sin asignar'].filter(Boolean).join(' · ')) + '</div></div><div class="row-right"><a class="icon-btn sm" href="../captacion/" target="_blank" rel="noopener" title="Ver en el CRM de captación (allí se gestiona)">' + ico('ext') + '</a></div></div>'; }).join('');
+    return '<div class="row crm"><span class="av sm" style="background:' + (s.estado === 'nueva' ? 'var(--red)' : venc ? 'var(--orange)' : 'var(--gray)') + '">' + (s.estado === 'nueva' ? 'N' : 'C') + '</span><div class="row-body"><div class="row-title">' + esc(s.nombre || 'Sin nombre') + (s.telefono ? ' · <a href="tel:' + esc(s.telefono) + '">' + esc(s.telefono) + '</a>' : '') + '</div><div class="row-meta">' + esc([s.direccion, s.campana, estado, s.asignado ? 'lo lleva ' + s.asignado : 'sin asignar'].filter(Boolean).join(' · ')) + '</div></div><div class="row-right"><a class="btn sm ghost" href="../captacion/" target="_blank" rel="noopener" title="Abrir en el CRM de captación (allí se gestiona)">CRM</a></div></div>'; }).join('');
 }
 function crmMias() { const t = todayYmd(); const l = (state.crm && state.crm.solicitudes) || []; return { nuevas: l.filter(s => s.estado === 'nueva'), hoy: l.filter(s => s.quien === YO && s.proxima && s.proxima <= t), todas: l }; }
 function viewCaptacion() {
-  const l = (state.crm && state.crm.solicitudes) || []; const g = {}; l.forEach(s => { (g[s.estado] = g[s.estado] || []).push(s); });
+  const todas = (state.crm && state.crm.solicitudes) || []; const t = todayYmd();
+  const F = [['todas', 'Todas', () => true], ['mias', 'Mías', s => s.quien === YO], ['nuevas', 'Nuevas', s => s.estado === 'nueva'], ['accion', 'Acción para hoy o vencida', s => s.proxima && s.proxima <= t], ['sin', 'Sin asignar', s => !s.asignado]];
+  const f = F.find(x => x[0] === (state.capF || 'todas')) || F[0]; const q = norm(state.capQ || '');
+  const l = todas.filter(f[2]).filter(s => !q || norm([s.nombre, s.telefono, s.direccion, s.campana, s.asignado, s.proxima_txt].join(' ')).includes(q));
+  const g = {}; l.forEach(s => { (g[s.estado] = g[s.estado] || []).push(s); });
   const ET = { nueva: 'Nuevas', contactada: 'Contactadas', visita: 'Visita concertada', presupuesto: 'Presupuesto enviado' };
-  let html = '<div class="hero"><div><div class="eyebrow">CRM de captación</div><h1>Captación</h1><p class="sub">' + (state.crm ? l.length + ' solicitudes abiertas' : 'Cargando…') + (state.crm && state.crm.aviso ? ' · ' + esc(state.crm.aviso) : '') + '</p></div><div class="hero-r"><button class="btn" data-act="crm-recargar">' + ico('repeat') + 'Actualizar</button><a class="btn primary" href="../captacion/" target="_blank" rel="noopener">' + ico('ext') + 'Abrir el CRM</a></div></div>';
+  let html = '<div class="hero"><div><div class="eyebrow">CRM de captación · solo lectura</div><h1>Captación</h1><p class="sub">' + (state.crm ? todas.length + ' solicitudes abiertas. Se gestionan en el CRM; aquí solo se consultan.' : 'Cargando…') + (state.crm && state.crm.aviso ? ' · ' + esc(state.crm.aviso) : '') + '</p></div><div class="hero-r"><button class="btn" data-act="crm-recargar">Actualizar</button><a class="btn primary" href="../captacion/" target="_blank" rel="noopener">Abrir el CRM</a></div></div>';
+  html += '<div class="filters">' + F.map(x => '<span class="chip' + (f[0] === x[0] ? ' on' : '') + '" data-act="cap-filter" data-v="' + x[0] + '">' + x[1] + ' <em>' + todas.filter(x[2]).length + '</em></span>').join('') + '</div>' +
+    '<div class="toolbar"><input class="tsearch" data-q="capQ" placeholder="Buscar por nombre, teléfono, dirección, campaña o quien la lleva" value="' + esc(state.capQ || '') + '" autocomplete="off"></div>';
   html += '<div class="card">' + (l.length ? Object.keys(ET).filter(k => g[k]).map(k => '<div class="group-title">' + ET[k] + ' <span>' + g[k].length + '</span></div>' + crmRows(g[k])).join('') + Object.keys(g).filter(k => !ET[k]).map(k => '<div class="group-title">' + esc(k) + '</div>' + crmRows(g[k])).join('') : '<div class="empty">' + (state.crm ? 'Nada abierto en el CRM' : 'Cargando…') + '</div>') + '</div>';
   return html;
 }
