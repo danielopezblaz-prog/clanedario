@@ -10,7 +10,7 @@ const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 
 const MONTHS_S = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const COLORS = ['#007AFF', '#AF52DE', '#34C759', '#FF9500', '#FF3B30', '#5AC8FA', '#FF2D55', '#5856D6', '#FFCC00', '#8E8E93'];
 const HOUR = 52;
-const APP_VERSION = '28-10-2026 · 12';
+const APP_VERSION = '28-10-2026 · 13';
 /* Modo empresa: index.php de proyecton.es inyecta CLAN_USUARIO (quién soy) y CLAN_APPS (lanzador). Sin eso, app personal. */
 const SRV = (window.CLAN_USUARIO && window.CLAN_USUARIO.usuario) ? window.CLAN_USUARIO : null;
 const YO = SRV ? SRV.usuario : '';
@@ -458,10 +458,13 @@ function renderNextUp() {
   el.className = 'next-up' + (mins < 30 ? ' soon' : ''); el.dataset.id = o.id; el.dataset.occ = o.occ; el.title = o.title;
   el.innerHTML = '<i class="pulse"></i><span>' + (o.type === 'event' ? 'Reunión' : 'Siguiente') + ': <b>' + esc(o.title) + '</b> ' + txt + '</span>';
 }
+/* bloque de cada apartado (color del menú, de la barra del móvil y del rótulo de la página) */
+const BLOQUES = { equipo: 'equipo', semana: 'equipo', panel: 'equipo', obras: 'obras', obra: 'obras', tablero: 'obras', captacion: 'obras' };
 function render() {
   const v = $('#view'); const st = v.scrollTop;
   v.innerHTML = state.view === 'today' ? viewToday() : state.view === 'upcoming' ? viewUpcoming() : state.view === 'calendar' ? viewCalendar() : state.view === 'list' ? viewList() : state.view === 'done' ? viewDone() : state.view === 'equipo' ? viewEquipo() : state.view === 'obras' ? viewObras() : state.view === 'obra' ? viewObra() : state.view === 'tablero' ? viewTablero() : state.view === 'semana' ? viewSemana() : state.view === 'panel' ? viewPanel() : state.view === 'captacion' ? viewCaptacion() : viewAll();
   v.scrollTop = st;
+  document.documentElement.dataset.bloque = BLOQUES[state.view] || 'trabajo';
   if (state.view === 'calendar' && state.calMode === 'week') { const w = $('#weekScroll'); if (w) w.scrollTop = 7.5 * HOUR; }
   renderSidebar();
 }
@@ -779,7 +782,7 @@ async function init() {
     const sb = $('#salirBtn'); if (sb) sb.href = SRV.salir || '../salir.php';
     const bi = $('#brandIcon'); if (bi) { bi.src = 'icon-192.png'; bi.hidden = false; }
     const bl = $('#brandLogo'); if (bl) { bl.src = 'logo-texto-blanco.png'; bl.hidden = false; }
-    const tb = $('#tabbar'); if (tb) tb.innerHTML = '<button data-view="today">' + ico('sun') + '<span>Hoy</span></button><button data-view="calendar">' + ico('cal') + '<span>Calendario</span></button><button data-view="all">' + ico('done') + '<span>Tareas</span></button><button data-view="obras" data-views="obras obra tablero">' + ico('building') + '<span>Obras</span></button><button data-act="more">' + ico('more') + '<span>Más</span></button>';
+    const tb = $('#tabbar'); if (tb) tb.innerHTML = '<button data-bloque="trabajo" data-view="today">' + ico('sun') + '<span>Hoy</span></button><button data-bloque="trabajo" data-view="calendar">' + ico('cal') + '<span>Calendario</span></button><button data-bloque="trabajo" data-view="all">' + ico('done') + '<span>Tareas</span></button><button data-bloque="obras" data-view="obras" data-views="obras obra tablero">' + ico('building') + '<span>Obras</span></button><button data-act="more">' + ico('more') + '<span>Más</span></button>';
     $('#view').addEventListener('keydown', e => { const i = e.target.closest && e.target.closest('input[data-inline]'); if (!i || e.key !== 'Enter') return; e.preventDefault(); inlineAddSubmit(i); });
     if (!state.settings.name) state.settings.name = SRV.nombre || '';
     let obrasT = null;

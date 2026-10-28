@@ -595,6 +595,23 @@ label.btn input{display:none}
 .apps-nav .nav-btn{color:var(--side-muted)}
 .apps-nav .nav-btn:hover{color:var(--side-ink)}
 .focus .btn svg{display:none}
+/* opción D (28-10-2026): una barrita con el color de su bloque en cada apartado.
+   Mi trabajo = acento (rojo Proyecton / azul en la personal), Equipo = ámbar, Obras = gris cálido. */
+:root{--b-trabajo:var(--accent);--b-equipo:#D9A145;--b-obras:#9A918D;--b-trabajo-ink:var(--accent);--b-equipo-ink:#9A6512;--b-obras-ink:#6E6560}
+:root[data-theme="dark"]{--b-equipo-ink:#D9A145;--b-obras-ink:#B0A7A3}
+:root[data-marca="proyecton"]{--b-trabajo:#E0483D}
+[data-bloque="trabajo"]{--bloque:var(--b-trabajo)}
+[data-bloque="equipo"]{--bloque:var(--b-equipo)}
+[data-bloque="obras"]{--bloque:var(--b-obras)}
+.nav-btn[data-bloque]::after{content:"";order:-1;width:3px;height:15px;border-radius:2px;background:var(--bloque);flex:none;opacity:.85;transition:height .12s,opacity .12s}
+.nav-btn[data-bloque]:hover::after{opacity:1}
+.nav-btn[data-bloque].active::after{height:20px;opacity:1}
+.nav-btn.active::before{display:none}
+.nav-btn{gap:10px;padding:0 10px}
+:root[data-bloque="equipo"] .eyebrow{color:var(--b-equipo-ink)}
+:root[data-bloque="obras"] .eyebrow{color:var(--b-obras-ink)}
+:root[data-bloque="equipo"] .hero,:root[data-bloque="obras"] .hero,:root[data-bloque="trabajo"] .hero{position:relative}
+
 /* buscador y agrupar de cada apartado */
 .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:-4px 0 14px}
 .tsearch{flex:1;min-width:220px;height:36px;border-radius:var(--r-sm);border:1px solid var(--line-2);background:var(--surface);padding:0 12px;outline:none;font-size:13px;transition:border-color .12s,box-shadow .12s}
@@ -675,7 +692,8 @@ label.btn input{display:none}
   .tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:44px;font-size:12.5px;font-weight:700;color:var(--muted);border-radius:10px;position:relative}
   .tabbar button svg{display:none}
   .tabbar button.active{color:var(--accent)}
-  .tabbar button.active::before{content:"";position:absolute;top:-4px;left:25%;right:25%;height:3px;border-radius:0 0 3px 3px;background:var(--accent)}
+  .tabbar button.active::before{content:"";position:absolute;top:-4px;left:25%;right:25%;height:3px;border-radius:0 0 3px 3px;background:var(--bloque,var(--accent))}
+  .tabbar button[data-bloque].active{color:var(--ink)}
   #searchBtn{display:none}
   #notifBtn{padding:0 9px}
   #newBtn{width:auto;padding:0 12px}

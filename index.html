@@ -69,18 +69,18 @@
     </a>
     <nav class="nav" id="nav">
       <div class="nav-label srv-only hidden">Mi trabajo</div>
-      <button class="nav-btn" data-view="today"><span>Hoy</span><b class="badge" id="badgeToday"></b></button>
-      <button class="nav-btn" data-view="upcoming"><span>Próximos</span></button>
-      <button class="nav-btn" data-view="calendar"><span>Calendario</span></button>
-      <button class="nav-btn" data-view="all"><span>Tareas</span><b class="badge soft" id="badgeAll"></b></button>
+      <button class="nav-btn" data-bloque="trabajo" data-view="today"><span>Hoy</span><b class="badge" id="badgeToday"></b></button>
+      <button class="nav-btn" data-bloque="trabajo" data-view="upcoming"><span>Próximos</span></button>
+      <button class="nav-btn" data-bloque="trabajo" data-view="calendar"><span>Calendario</span></button>
+      <button class="nav-btn" data-bloque="trabajo" data-view="all"><span>Tareas</span><b class="badge soft" id="badgeAll"></b></button>
       <div class="nav-label srv-only hidden">Equipo</div>
-      <button class="nav-btn srv-only hidden" data-view="equipo"><span>Equipo</span></button>
-      <button class="nav-btn srv-only hidden" data-view="semana"><span>Semana del equipo</span></button>
-      <button class="nav-btn srv-only hidden" data-view="panel"><span>Panel</span></button>
+      <button class="nav-btn srv-only hidden" data-bloque="equipo" data-view="equipo"><span>Equipo</span></button>
+      <button class="nav-btn srv-only hidden" data-bloque="equipo" data-view="semana"><span>Semana del equipo</span></button>
+      <button class="nav-btn srv-only hidden" data-bloque="equipo" data-view="panel"><span>Panel</span></button>
       <div class="nav-label srv-only hidden">Obras</div>
-      <button class="nav-btn srv-only hidden" data-view="obras" data-views="obras obra"><span>Obras</span></button>
-      <button class="nav-btn srv-only hidden" data-view="tablero"><span>Tablero</span></button>
-      <button class="nav-btn srv-only hidden" data-view="captacion"><span>Captación</span><b class="badge soft" id="badgeCrm"></b></button>
+      <button class="nav-btn srv-only hidden" data-bloque="obras" data-view="obras" data-views="obras obra"><span>Obras</span></button>
+      <button class="nav-btn srv-only hidden" data-bloque="obras" data-view="tablero"><span>Tablero</span></button>
+      <button class="nav-btn srv-only hidden" data-bloque="obras" data-view="captacion"><span>Captación</span><b class="badge soft" id="badgeCrm"></b></button>
     </nav>
     <div class="side-head"><span>Mis listas</span><button class="side-add" id="addList" title="Crear una lista">Nueva</button></div>
     <nav class="nav lists" id="listNav"></nav>
@@ -116,10 +116,10 @@
 </div>
 
 <nav class="tabbar" id="tabbar">
-  <button data-view="today"><span>Hoy</span></button>
-  <button data-view="upcoming"><span>Próximos</span></button>
-  <button data-view="calendar"><span>Calendario</span></button>
-  <button data-view="all"><span>Tareas</span></button>
+  <button data-bloque="trabajo" data-view="today"><span>Hoy</span></button>
+  <button data-bloque="trabajo" data-view="upcoming"><span>Próximos</span></button>
+  <button data-bloque="trabajo" data-view="calendar"><span>Calendario</span></button>
+  <button data-bloque="trabajo" data-view="all"><span>Tareas</span></button>
   <button data-act="more"><span>Más</span></button>
 </nav>
 
