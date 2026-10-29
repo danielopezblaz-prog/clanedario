@@ -10,7 +10,7 @@ const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 
 const MONTHS_S = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const COLORS = ['#007AFF', '#AF52DE', '#34C759', '#FF9500', '#FF3B30', '#5AC8FA', '#FF2D55', '#5856D6', '#FFCC00', '#8E8E93'];
 const HOUR = 52;
-const APP_VERSION = '29-10-2026 · 14';
+const APP_VERSION = '29-10-2026 · 15';
 /* Modo empresa: index.php de proyecton.es inyecta CLAN_USUARIO (quién soy) y CLAN_APPS (lanzador). Sin eso, app personal. */
 const SRV = (window.CLAN_USUARIO && window.CLAN_USUARIO.usuario) ? window.CLAN_USUARIO : null;
 const YO = SRV ? SRV.usuario : '';
@@ -594,12 +594,13 @@ function openSettings() {
     '<div class="field"><label>Densidad</label>' + sel('sdensity', [['compacta', 'Compacta'], ['comoda', 'Cómoda']], s.density || 'compacta') + '</div>' +
     '<div class="field full"><label>Sonido</label><div class="toggle' + (s.sound ? ' on' : '') + '" data-act="toggle-sound"><span>Sonido en los avisos</span><i class="sw"></i></div></div>' +
     (SRV ? '<div class="field full"><label>Avisos en este dispositivo</label><div id="pushBox">' + pushBoxHtml() + '</div></div>' +
+      '<div class="field full"><label>Recordarme lo próximo</label>' + sel('sproximo', [['0', 'No'], ['30', 'Cada 30 minutos'], ['60', 'Cada hora'], ['120', 'Cada 2 horas']], String(s.proximoCada || 0)) + '<p class="hint" style="margin-top:6px">De 8:00 a 21:00, si te queda algo con hora hoy, salta un aviso con lo próximo (y lo siguiente). Cada uno sustituye al anterior: en la pantalla de bloqueo queda siempre uno, el del próximo evento. Llega a los dispositivos con los avisos activados y a la app de Android.</p></div>' +
       '<div class="field full"><label>En la pantalla de inicio</label><div id="instBox">' + instalarHtml() + '</div></div>'
       : '<div class="field full"><label>Avisos de Windows</label><div class="toggle' + (perm === 'granted' ? ' on' : '') + '" data-act="ask-notif"><span>' + (perm === 'granted' ? 'Activados' : perm === 'denied' ? 'Bloqueados en el navegador (candado de la barra de direcciones)' : 'Pulsa para activar') + '</span><i class="sw"></i></div><p class="hint" style="margin-top:6px">Con la app abierta (aunque esté minimizada o detrás) los avisos salen como notificaciones de Windows con sonido. Si la cierras del todo no puede avisarte.</p></div>') +
     '<div class="field full"><label>Datos</label><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" data-act="export-json">Copia de seguridad (.json)</button><button class="btn sm" data-act="import-json">Restaurar copia</button><button class="btn sm" data-act="export-ics">Exportar a Outlook / Google (.ics)</button></div><input type="file" id="importFile" accept=".json" class="hidden"></div>' +
     '<div class="field full"><label>Atajos</label><p class="hint"><code>N</code> añadir · <code>Ctrl+K</code> buscar · <code>Esc</code> cerrar · <code>Ctrl+Enter</code> guardar la ficha · <code>1</code>–<code>5</code> cambiar de vista</p></div>' +
     '<div class="field full"><label>Versión</label><p class="hint">' + APP_VERSION + ' · Si no ves la última, cierra la app y vuelve a abrirla (o pulsa F5).</p></div>' +
-    (SRV ? '<div class="field full"><label>Calendario del móvil y Outlook</label><div id="icsBox">' + (state.icsUrl ? '<input readonly value="' + esc(state.icsUrl) + '"><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn sm primary" data-act="ics-copiar">Copiar la dirección</button><a class="btn sm" href="' + esc(state.icsWebcal || state.icsUrl) + '">Abrir en el calendario</a><button class="btn sm ghost" data-act="ics-renovar">Renovar</button></div>' : '<button class="btn sm primary" data-act="ics-obtener">Obtener mi dirección de calendario</button>') + '</div><p class="hint" style="margin-top:6px">Suscríbete una vez y tus reuniones y tareas con fecha salen en el calendario de siempre, con sus avisos, aunque Clanedario esté cerrado. <b>iPhone:</b> Ajustes &gt; Apps &gt; Calendario &gt; Cuentas &gt; Añadir cuenta &gt; Otro &gt; Añadir calendario suscrito, y pega la dirección. <b>Android:</b> la app gratuita ICSx⁵ (Play Store) &gt; + &gt; pega la dirección y elige sincronizar cada 15 minutos; sale en el calendario del teléfono con sus alarmas. O en el ordenador, Google Calendar &gt; Otros calendarios &gt; + &gt; Desde URL (Google tarda horas en refrescar). <b>Pantalla de inicio:</b> pon el widget del calendario del teléfono y verás ahí las próximas reuniones. <b>Outlook:</b> Añadir calendario &gt; Suscribirse desde la web. La dirección es personal: no la compartas.</p></div>' +
+    (SRV ? '<div class="field full"><label>Calendario del móvil y Outlook</label><div id="icsBox">' + (state.icsUrl ? '<input readonly value="' + esc(state.icsUrl) + '"><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn sm primary" data-act="ics-copiar">Copiar la dirección</button><a class="btn sm" href="' + esc(state.icsWebcal || state.icsUrl) + '">Abrir en el calendario</a><button class="btn sm ghost" data-act="ics-renovar">Renovar</button></div>' : '<button class="btn sm primary" data-act="ics-obtener">Obtener mi dirección de calendario</button>') + '</div><p class="hint" style="margin-top:6px">Suscríbete una vez y tus reuniones y tareas con fecha salen en el calendario de siempre, con sus avisos, aunque Clanedario esté cerrado. <b>iPhone:</b> Ajustes &gt; Apps &gt; Calendario &gt; Cuentas &gt; Añadir cuenta &gt; Otro &gt; Añadir calendario suscrito, y pega la dirección. <b>Android:</b> la app gratuita ICSx⁵ (Play Store) &gt; + &gt; pega la dirección y elige sincronizar cada 15 minutos; sale en el calendario del teléfono con sus alarmas. O en el ordenador, Google Calendar &gt; Otros calendarios &gt; + &gt; Desde URL (Google tarda horas en refrescar). <b>Pantalla de bloqueo del iPhone:</b> mantén pulsada la pantalla bloqueada &gt; Personalizar &gt; Pantalla bloqueada &gt; toca la zona de widgets &gt; Calendario &gt; «Siguiente evento»: tu próxima reunión queda siempre a la vista. En Android, la app de Android lo pone sola. <b>Outlook:</b> Añadir calendario &gt; Suscribirse desde la web. La dirección es personal: no la compartas.</p></div>' +
       '<div class="field full"><label>Cuenta</label><p class="hint">Conectado como <b>' + esc(SRV.nombre) + '</b> en proyecton.es' + (SRV.lectura ? ' · solo lectura' : '') + (SRV.admin ? ' · administrador' : '') + ' · <a href="' + esc(SRV.salir || '../salir.php') + '">Salir</a></p></div>' : '') +
     '</div><div class="sheet-foot"><span class="spacer"></span><button class="btn primary" data-act="settings-save">Guardar</button></div>');
 }
@@ -735,7 +736,7 @@ function onAction(e) {
     case 'list-del': delList(sheetState.listId); break;
     case 'toggle-sound': state.settings.sound = !state.settings.sound; el.classList.toggle('on', state.settings.sound); save(); if (state.settings.sound) chime('done'); break;
     case 'ask-notif': askNotif(); break;
-    case 'settings-save': state.settings.name = $('#sheet [name="sname"]').value.trim(); state.settings.theme = $('#sheet [name="stheme"]').value; state.settings.density = $('#sheet [name="sdensity"]').value; save(); applyTheme(); applyDensity(); closeSheet(); render(); break;
+    case 'settings-save': if ($('#sheet [name="sproximo"]')) state.settings.proximoCada = Number($('#sheet [name="sproximo"]').value) || 0; state.settings.name = $('#sheet [name="sname"]').value.trim(); state.settings.theme = $('#sheet [name="stheme"]').value; state.settings.density = $('#sheet [name="sdensity"]').value; save(); applyTheme(); applyDensity(); closeSheet(); render(); break;
     case 'export-json': exportJson(); break;
     case 'export-ics': exportIcs(); break;
     case 'import-json': $('#importFile').click(); break;
@@ -755,6 +756,8 @@ function onAction(e) {
     case 'settings-abrir': openSettings(); break;
     case 'push-activar': pushActivar(); break;
     case 'push-probar': pushProbar(); break;
+    case 'nativo-probar': try { NATIVO.probar(); toast('Alarma de prueba en 10 segundos', 'Bloquea el teléfono y ponlo en silencio para comprobarlo', 'ok', 6000); } catch (e) { } break;
+    case 'nativo-permisos': try { NATIVO.permisos(); } catch (e) { } break;
     case 'push-desactivar': pushDesactivar(); break;
     case 'movil-ocultar': lsSet('clanedario.movil.oculto', todayYmd()); render(); break;
     case 'instalar': if (instalarEvento) { instalarEvento.prompt(); instalarEvento.userChoice.then(() => { instalarEvento = null; refrescarMovil(); }).catch(() => { }); } else openSettings(); break;
@@ -826,6 +829,7 @@ async function init() {
   }
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); instalarEvento = e; refrescarMovil(); });
   window.addEventListener('appinstalled', () => { instalarEvento = null; toast('Clanedario instalado', 'Ya lo tienes en la pantalla de inicio', 'ok'); refrescarMovil(); });
+  window.addEventListener('clan-nativo', refrescarMovil);   // la app del móvil avisa al volver de dar permisos o tras actualizar las alarmas
   $('#addList').addEventListener('click', () => openListSheet(null));
   $('#themeBtn').addEventListener('click', () => { state.settings.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; save(); applyTheme(); });
   $('#notifBtn').addEventListener('click', SRV ? openNovedades : askNotif);
@@ -859,7 +863,7 @@ async function init() {
   setupDnD($('#view'));
   render(); renderQuickChips(); checkReminders();
   abrirDesdeEnlace();
-  if (SRV) pushComprobar();
+  if (SRV) { pushComprobar(); nativoConfigurar(); apkComprobar(); }
   setInterval(checkReminders, 20000);
   setInterval(() => { if (!sheetState) { if (state.view === 'today' || state.view === 'calendar') render(); else renderSidebar(); } }, 60000);
   let last = todayYmd(); setInterval(() => { if (todayYmd() !== last) { last = todayYmd(); state.sel = last; render(); } }, 30000);
@@ -1028,11 +1032,37 @@ function lsSet(k, v) { try { if (v) localStorage.setItem(k, v); else localStorag
 const esIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const esMovil = () => esIOS() || /Android|Mobi/i.test(navigator.userAgent);
 const instalada = () => { try { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch (e) { return false; } };
-const pushSoportado = () => !!SRV && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && window.isSecureContext;
+const pushSoportado = () => !!SRV && !NATIVO && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && window.isSecureContext;
+/* app del móvil (Android: window.ClanNativo; iPhone: webkit.messageHandlers.clan). Guarda en el teléfono las alarmas,
+   el aviso fijo de la pantalla de bloqueo y el widget, con la dirección personal de movil.php (el token del calendario). */
+const NATIVO = window.ClanNativo || (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.clan ? {
+  configurar: u => window.webkit.messageHandlers.clan.postMessage({ op: 'configurar', url: u }),
+  refrescar: () => window.webkit.messageHandlers.clan.postMessage({ op: 'refrescar' }),
+  probar: () => window.webkit.messageHandlers.clan.postMessage({ op: 'probar' }),
+  permisos: () => window.webkit.messageHandlers.clan.postMessage({ op: 'permisos' }),
+  estado: () => '{}'
+} : null);
+function nativoEstado() { try { return JSON.parse(NATIVO.estado() || '{}'); } catch (e) { return {}; } }
+async function nativoConfigurar() {
+  if (!SRV || !NATIVO) return;
+  try { const r = await srvFetch('ics-url'); if (r.url) NATIVO.configurar(r.url.replace('/ics.php', '/movil.php')); } catch (e) { }
+}
+let nativoT = null;
+function nativoRefrescar() { if (!NATIVO) return; clearTimeout(nativoT); nativoT = setTimeout(() => { try { NATIVO.refrescar(); } catch (e) { } }, 1500); }
+function nativoBoxHtml() {
+  const e = nativoEstado(); const falta = [];
+  if (e.notificaciones === false) falta.push('las notificaciones');
+  if (e.exactas === false) falta.push('las alarmas a su hora');
+  if (e.pantallaCompleta === false) falta.push('la alarma en pantalla completa');
+  return '<div class="push-ok"><b>Alarmas guardadas en este teléfono</b><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm primary" data-act="nativo-probar">Probar alarma</button>' + (falta.length ? '<button class="btn sm" data-act="nativo-permisos">Dar permisos</button>' : '') + '</div></div>' +
+    (falta.length ? '<p class="hint" style="margin-top:6px"><b>Falta permitir:</b> ' + esc(falta.join(', ')) + '.</p>' : '') +
+    '<p class="hint" style="margin-top:6px">Suenan a su hora aunque Clanedario esté cerrado, la pantalla apagada, el móvil en silencio y sin internet en ese momento. En la pantalla de bloqueo queda un aviso fijo con lo próximo y puedes poner el widget «Próximos» en la de inicio. Se actualizan solos cada 15 minutos y al momento cuando cambias algo aquí.' + (e.ultima ? ' Última actualización: ' + esc(e.ultima) + '.' : '') + '</p>';
+}
 function b64uU8(s) { const p = '='.repeat((4 - s.length % 4) % 4); const b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); const u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
 function u8B64u(buf) { const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i++) s += String.fromCharCode(u[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
 function pushBoxHtml() {
-  const ayuda = '<p class="hint" style="margin-top:6px">Te llegan aunque Clanedario esté cerrado y con la pantalla bloqueada, con el sonido de notificaciones del teléfono. Con el móvil apagado del todo, en silencio o en No molestar no suenan. Pueden llegar hasta 5 minutos antes de la hora que pusiste.</p>';
+  if (NATIVO) return nativoBoxHtml();
+  const ayuda = '<p class="hint" style="margin-top:6px">Te llegan aunque Clanedario esté cerrado y con la pantalla bloqueada, con el sonido de notificaciones del teléfono. Con el móvil apagado del todo, en silencio o en No molestar no suenan (para eso, la app de Android). Pueden llegar hasta 5 minutos antes de la hora que pusiste.</p>';
   if (!pushSoportado()) {
     if (esIOS() && !instalada()) return '<p class="hint">En iPhone, primero añade Clanedario a la pantalla de inicio (botón Compartir de Safari &gt; «Añadir a pantalla de inicio») y ábrelo desde ese icono. Después vuelve aquí y activa los avisos.</p>' + ayuda;
     return '<p class="hint">Este navegador no admite avisos con la app cerrada. En el móvil usa Chrome (Android) o Safari con la app en la pantalla de inicio (iPhone).</p>';
@@ -1042,6 +1072,15 @@ function pushBoxHtml() {
   return '<button class="btn primary" data-act="push-activar">Activar avisos en este dispositivo</button>' + ayuda;
 }
 function instalarHtml() {
+  if (NATIVO) return '<p class="hint"><b>Es la app de Clanedario para el móvil.</b> Para tener lo próximo en la pantalla de inicio, mantén pulsado un hueco del escritorio &gt; Widgets &gt; Clanedario &gt; «Próximos».</p>';
+  if (esAndroid()) return '<a class="btn primary" href="Clanedario.apk">Descargar la app de Android</a><p class="hint" style="margin-top:6px">Es la forma buena en Android: alarmas que suenan a su hora aunque el móvil esté en silencio y sin internet, lo próximo fijo en la pantalla de bloqueo y un widget. Al abrir el archivo, el teléfono pide permitir instalar apps de Chrome: acéptalo solo para esta. Después entra con tu usuario de Prestón.</p>';
+  return instalarBase();
+}
+/* la app de Android solo se ofrece cuando Clanedario.apk ya está subido (si no, el enlace daría error) */
+let apkHay = false;
+const esAndroid = () => apkHay && !!SRV && !NATIVO && /Android/i.test(navigator.userAgent);
+function apkComprobar() { if (!SRV || NATIVO || !/Android/i.test(navigator.userAgent)) return; fetch('Clanedario.apk', { method: 'HEAD', cache: 'no-store', credentials: 'same-origin' }).then(r => { apkHay = r.ok; if (apkHay) refrescarMovil(); }).catch(() => { }); }
+function instalarBase() {
   if (instalada()) return '<p class="hint"><b>Instalada.</b> Clanedario ya está en la pantalla de inicio de este dispositivo. Mantén pulsado el icono para ir directo a Hoy, Nueva tarea o Calendario.</p>';
   if (instalarEvento) return '<button class="btn primary" data-act="instalar">Instalar Clanedario en este dispositivo</button><p class="hint" style="margin-top:6px">Queda como una app más, con su icono y el número de pendientes de hoy.</p>';
   if (esIOS()) return '<p class="hint">En iPhone: abre esta página en Safari, pulsa el botón Compartir y elige «Añadir a pantalla de inicio». Ábrela siempre desde ese icono.</p>';
@@ -1049,7 +1088,8 @@ function instalarHtml() {
 }
 /* banda en «Hoy»: primero instalar (en el móvil), después activar los avisos; se puede ocultar por hoy */
 function movilAvisoHtml() {
-  if (!SRV || lsGet('clanedario.movil.oculto') === todayYmd()) return '';
+  if (!SRV || NATIVO || lsGet('clanedario.movil.oculto') === todayYmd()) return '';
+  if (esAndroid()) return '<div class="aviso-movil"><div><b>Instala la app de Clanedario</b><span>Alarmas que suenan aunque el móvil esté en silencio y tus próximas reuniones fijas en la pantalla de bloqueo.</span></div><a class="btn sm primary" href="Clanedario.apk">Descargar</a><button class="btn sm ghost" data-act="movil-ocultar">Ahora no</button></div>';
   if (esMovil() && !instalada()) return '<div class="aviso-movil"><div><b>Pon Clanedario en la pantalla de inicio</b><span>Así se abre como una app y te pueden llegar los avisos con la pantalla bloqueada.</span></div>' + (instalarEvento ? '<button class="btn sm primary" data-act="instalar">Instalar</button>' : '<button class="btn sm primary" data-act="settings-abrir">Cómo se hace</button>') + '<button class="btn sm ghost" data-act="movil-ocultar">Ahora no</button></div>';
   if (pushSoportado() && state.pushSub === '' && Notification.permission !== 'denied') return '<div class="aviso-movil"><div><b>Activa los avisos en este dispositivo</b><span>Te avisará de tus reuniones y tareas aunque Clanedario esté cerrado.</span></div><button class="btn sm primary" data-act="push-activar">Activar avisos</button><button class="btn sm ghost" data-act="movil-ocultar">Ahora no</button></div>';
   return '';
@@ -1077,7 +1117,7 @@ async function pushActivar() {
     if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uU8(clave) });
     const r = await srvFetch('push-alta', { sub: sub.toJSON(), ua: navigator.userAgent });
     state.pushSub = sub.endpoint;
-    toast('Avisos activados', 'En este dispositivo' + (r.dispositivos > 1 ? ' (tienes ' + r.dispositivos + ' con avisos)' : '') + '. Pulsa «Probar aviso» para comprobarlo', 'ok', 5000);
+    toast('Avisos activados', 'En este dispositivo' + (r.dispositivos > 1 ? ' (tienes ' + r.dispositivos + ' con avisos)' : '') + '. Pulsa «Probar aviso» y elige abajo «Recordarme lo próximo»', 'ok', 5000);
   } catch (e) { toast('No se han podido activar los avisos', String((e && e.message) || e), 'info', 7000); }
   refrescarMovil();
 }
@@ -1164,7 +1204,8 @@ async function srvFlush() {
     }
     if (borrados.length) { await srvFetch('borrar', { ids: borrados }); borrados.forEach(id => { delete srvSent[id]; }); }
     const lj = JSON.stringify(state.lists); if (lj !== srvListsSent) { await srvFetch('listas', { listas: state.lists }); srvListsSent = lj; }
-    const aj = JSON.stringify(state.settings); if (aj !== srvAjSent) { await srvFetch('ajustes', { ajustes: state.settings }); srvAjSent = aj; }
+    const aj = JSON.stringify(state.settings); if (aj !== srvAjSent) { await srvFetch('ajustes', { ajustes: state.settings }); srvAjSent = aj; nativoRefrescar(); }
+    if (cambiados.length || borrados.length) nativoRefrescar();
     srvPendiente = false; srvBien();
   } catch (e) { srvFallo(e); }
   srvBusy = false;
@@ -1190,7 +1231,7 @@ async function srvLatido() {
     });
     if (d.ahora) state.srvDesde = d.ahora;
     srvBien();
-    if (tocado) { saveCache(); if (!sheetState && !menuEl) render(); else renderSidebar(); }
+    if (tocado) { saveCache(); nativoRefrescar(); if (!sheetState && !menuEl) render(); else renderSidebar(); }
     srvTicks++; if (srvTicks % 15 === 0) { srvCrm(false); if (state.view === 'obras' || state.view === 'tablero' || state.view === 'panel') srvObras(true); }
   } catch (e) { if (srvOk) srvFallo(e); }
 }
