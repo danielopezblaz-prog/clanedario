@@ -10,7 +10,7 @@ const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 
 const MONTHS_S = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const COLORS = ['#007AFF', '#AF52DE', '#34C759', '#FF9500', '#FF3B30', '#5AC8FA', '#FF2D55', '#5856D6', '#FFCC00', '#8E8E93'];
 const HOUR = 52;
-const APP_VERSION = '28-10-2026 · 13';
+const APP_VERSION = '29-10-2026 · 14';
 /* Modo empresa: index.php de proyecton.es inyecta CLAN_USUARIO (quién soy) y CLAN_APPS (lanzador). Sin eso, app personal. */
 const SRV = (window.CLAN_USUARIO && window.CLAN_USUARIO.usuario) ? window.CLAN_USUARIO : null;
 const YO = SRV ? SRV.usuario : '';
@@ -237,6 +237,7 @@ function viewToday() {
   let html = '<div class="hero"><div><div class="eyebrow">' + fmtLong(t) + '</div><h1>' + greet + name + '</h1><p class="sub">' + sub + '</p></div>' +
     '<div class="ring" style="--p:' + pct + '" title="Completado hoy: ' + doneN + ' de ' + items.length + '"><span>' + (items.length ? pct + '%' : '—') + '</span></div></div>';
   html += '<div class="kcards">' + kcard('danger', 'flag', od.length, 'Vencidas', 'all', 'overdue') + kcard('accent', 'sun', items.filter(o => !o.isDone).length, 'Para hoy', 'today') + kcard('warn', 'cal', week, 'Esta semana', 'upcoming') + kcard('ok', 'done', pendingAll().length, 'Pendientes en total', 'all', 'all') + '</div>';
+  html += movilAvisoHtml();
   html += focusHtml();
   html += '<div class="grid3"><section class="card c1"><div class="card-head"><h2>Agenda de hoy <span class="n">' + items.filter(o => o.time).length + '</span></h2><button class="btn sm" data-act="new-event">' + 'Nueva reunión</button></div>' + timelineHtml(t) + '</section>';
   html += '<section class="card c2"><div class="card-head"><h2>Tareas <span class="n">' + (tasks.filter(o => !o.isDone).length + od.length) + '</span></h2><button class="btn sm" data-act="new-task">' + 'Nueva tarea</button></div>';
@@ -437,6 +438,8 @@ function renderSidebar() {
     const nb = novedades().length; $('#notifBtn').dataset.n = nb ? String(nb) : '';
   }
   document.title = n ? '(' + n + ') Clanedario' : 'Clanedario';
+  /* número de pendientes de hoy en el icono de la app instalada (móvil y ordenador) */
+  try { if ('setAppBadge' in navigator) { if (n) navigator.setAppBadge(n).catch(() => { }); else navigator.clearAppBadge().catch(() => { }); } } catch (e) { }
   renderMini(); renderNextUp();
 }
 function renderMini() {
@@ -590,11 +593,13 @@ function openSettings() {
     '<div class="field"><label>Tema</label>' + sel('stheme', [['auto', 'Como el sistema'], ['light', 'Claro'], ['dark', 'Oscuro']], s.theme) + '</div>' +
     '<div class="field"><label>Densidad</label>' + sel('sdensity', [['compacta', 'Compacta'], ['comoda', 'Cómoda']], s.density || 'compacta') + '</div>' +
     '<div class="field full"><label>Sonido</label><div class="toggle' + (s.sound ? ' on' : '') + '" data-act="toggle-sound"><span>Sonido en los avisos</span><i class="sw"></i></div></div>' +
-    '<div class="field full"><label>Avisos de Windows</label><div class="toggle' + (perm === 'granted' ? ' on' : '') + '" data-act="ask-notif"><span>' + (perm === 'granted' ? 'Activados' : perm === 'denied' ? 'Bloqueados en el navegador (candado de la barra de direcciones)' : 'Pulsa para activar') + '</span><i class="sw"></i></div><p class="hint" style="margin-top:6px">Con la app abierta (aunque esté minimizada o detrás) los avisos salen como notificaciones de Windows con sonido. Si la cierras del todo no puede avisarte.</p></div>' +
+    (SRV ? '<div class="field full"><label>Avisos en este dispositivo</label><div id="pushBox">' + pushBoxHtml() + '</div></div>' +
+      '<div class="field full"><label>En la pantalla de inicio</label><div id="instBox">' + instalarHtml() + '</div></div>'
+      : '<div class="field full"><label>Avisos de Windows</label><div class="toggle' + (perm === 'granted' ? ' on' : '') + '" data-act="ask-notif"><span>' + (perm === 'granted' ? 'Activados' : perm === 'denied' ? 'Bloqueados en el navegador (candado de la barra de direcciones)' : 'Pulsa para activar') + '</span><i class="sw"></i></div><p class="hint" style="margin-top:6px">Con la app abierta (aunque esté minimizada o detrás) los avisos salen como notificaciones de Windows con sonido. Si la cierras del todo no puede avisarte.</p></div>') +
     '<div class="field full"><label>Datos</label><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" data-act="export-json">Copia de seguridad (.json)</button><button class="btn sm" data-act="import-json">Restaurar copia</button><button class="btn sm" data-act="export-ics">Exportar a Outlook / Google (.ics)</button></div><input type="file" id="importFile" accept=".json" class="hidden"></div>' +
     '<div class="field full"><label>Atajos</label><p class="hint"><code>N</code> añadir · <code>Ctrl+K</code> buscar · <code>Esc</code> cerrar · <code>Ctrl+Enter</code> guardar la ficha · <code>1</code>–<code>5</code> cambiar de vista</p></div>' +
     '<div class="field full"><label>Versión</label><p class="hint">' + APP_VERSION + ' · Si no ves la última, cierra la app y vuelve a abrirla (o pulsa F5).</p></div>' +
-    (SRV ? '<div class="field full"><label>Calendario del móvil y Outlook</label><div id="icsBox">' + (state.icsUrl ? '<input readonly value="' + esc(state.icsUrl) + '"><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn sm primary" data-act="ics-copiar">Copiar la dirección</button><a class="btn sm" href="' + esc(state.icsWebcal || state.icsUrl) + '">Abrir en el calendario</a><button class="btn sm ghost" data-act="ics-renovar">Renovar</button></div>' : '<button class="btn sm primary" data-act="ics-obtener">Obtener mi dirección de calendario</button>') + '</div><p class="hint" style="margin-top:6px">Suscríbete una vez y tus reuniones y tareas con fecha salen en el calendario de siempre, con sus avisos, aunque Clanedario esté cerrado. <b>iPhone:</b> Ajustes &gt; Apps &gt; Calendario &gt; Cuentas &gt; Añadir cuenta &gt; Otro &gt; Añadir calendario suscrito, y pega la dirección. <b>Android / Google:</b> en el ordenador, Google Calendar &gt; Otros calendarios &gt; + &gt; Desde URL (Google tarda horas en refrescar). <b>Outlook:</b> Añadir calendario &gt; Suscribirse desde la web. La dirección es personal: no la compartas.</p></div>' +
+    (SRV ? '<div class="field full"><label>Calendario del móvil y Outlook</label><div id="icsBox">' + (state.icsUrl ? '<input readonly value="' + esc(state.icsUrl) + '"><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn sm primary" data-act="ics-copiar">Copiar la dirección</button><a class="btn sm" href="' + esc(state.icsWebcal || state.icsUrl) + '">Abrir en el calendario</a><button class="btn sm ghost" data-act="ics-renovar">Renovar</button></div>' : '<button class="btn sm primary" data-act="ics-obtener">Obtener mi dirección de calendario</button>') + '</div><p class="hint" style="margin-top:6px">Suscríbete una vez y tus reuniones y tareas con fecha salen en el calendario de siempre, con sus avisos, aunque Clanedario esté cerrado. <b>iPhone:</b> Ajustes &gt; Apps &gt; Calendario &gt; Cuentas &gt; Añadir cuenta &gt; Otro &gt; Añadir calendario suscrito, y pega la dirección. <b>Android:</b> la app gratuita ICSx⁵ (Play Store) &gt; + &gt; pega la dirección y elige sincronizar cada 15 minutos; sale en el calendario del teléfono con sus alarmas. O en el ordenador, Google Calendar &gt; Otros calendarios &gt; + &gt; Desde URL (Google tarda horas en refrescar). <b>Pantalla de inicio:</b> pon el widget del calendario del teléfono y verás ahí las próximas reuniones. <b>Outlook:</b> Añadir calendario &gt; Suscribirse desde la web. La dirección es personal: no la compartas.</p></div>' +
       '<div class="field full"><label>Cuenta</label><p class="hint">Conectado como <b>' + esc(SRV.nombre) + '</b> en proyecton.es' + (SRV.lectura ? ' · solo lectura' : '') + (SRV.admin ? ' · administrador' : '') + ' · <a href="' + esc(SRV.salir || '../salir.php') + '">Salir</a></p></div>' : '') +
     '</div><div class="sheet-foot"><span class="spacer"></span><button class="btn primary" data-act="settings-save">Guardar</button></div>');
 }
@@ -674,6 +679,7 @@ function checkReminders() {
 }
 function fire(it, date) {
   state.fired[it.id + '|' + date] = { at: Date.now() }; showReminder(it, date); chime('alert');
+  if (SRV && state.pushSub) return;   // con los avisos push activados, el del sistema lo manda el servidor (así no llega dos veces)
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   const opts = { body: (it.type === 'event' ? 'Reunión' : 'Tarea') + ' · ' + relDay(date) + (it.time ? ' a las ' + it.time : '') + (it.location ? ' · ' + it.location : ''), tag: it.id + '|' + date, requireInteraction: true, icon: 'icon-192.png', badge: 'icon-192.png', data: { id: it.id, date: date } };
   const legacy = () => { try { const n = new Notification(it.title, opts); n.onclick = () => { window.focus(); openItem(it.id, date); n.close(); }; } catch (e) { } };
@@ -746,6 +752,12 @@ function onAction(e) {
     case 'adj-borrar': { e.preventDefault(); e.stopPropagation(); if (!confirm('¿Quitar este archivo?')) break; const k = el.dataset.k, v = el.dataset.v; srvFetch('adjunto-borrar', { id: el.dataset.adj }).then(r => { adjCache[k === 'item' ? 'i:' + v : 'o:' + v] = r.adjuntos || []; refrescarAdjuntos(k, v); }).catch(srvFallo); break; }
     case 'ics-obtener': srvFetch('ics-url').then(r => { state.icsUrl = r.url; state.icsWebcal = r.webcal; openSettings(); }).catch(srvFallo); break;
     case 'ics-renovar': if (confirm('Se anulará la dirección anterior: habrá que volver a suscribirse en el móvil u Outlook. ¿Seguir?')) srvFetch('ics-renovar').then(r => { state.icsUrl = r.url; state.icsWebcal = r.webcal; openSettings(); toast('Dirección renovada', 'La anterior ya no vale', 'ok'); }).catch(srvFallo); break;
+    case 'settings-abrir': openSettings(); break;
+    case 'push-activar': pushActivar(); break;
+    case 'push-probar': pushProbar(); break;
+    case 'push-desactivar': pushDesactivar(); break;
+    case 'movil-ocultar': lsSet('clanedario.movil.oculto', todayYmd()); render(); break;
+    case 'instalar': if (instalarEvento) { instalarEvento.prompt(); instalarEvento.userChoice.then(() => { instalarEvento = null; refrescarMovil(); }).catch(() => { }); } else openSettings(); break;
     case 'ics-copiar': { const i = $('#icsBox input'); if (i) { i.select(); try { navigator.clipboard.writeText(i.value); } catch (e) { document.execCommand('copy'); } toast('Copiada', 'Pégala en tu calendario como calendario suscrito', 'ok'); } break; }
     case 'obra-nueva': { const ob = (state.obras || []).find(o => o.id === el.dataset.id); openItem(null, null, Object.assign({ date: todayYmd(), obra: ob ? { id: ob.id, nombre: ob.nombre } : null }, el.dataset.type === 'event' ? { type: 'event', time: nextHour(), end: addMin(nextHour(), 60), reminder: 15, list: evList } : {})); break; }
     case 'obras-recargar': state.obras = null; render(); srvObras(true); break;
@@ -812,6 +824,8 @@ async function init() {
     }).catch(() => { });
     navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'open' && e.data.id) openItem(e.data.id, e.data.date || null); });
   }
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); instalarEvento = e; refrescarMovil(); });
+  window.addEventListener('appinstalled', () => { instalarEvento = null; toast('Clanedario instalado', 'Ya lo tienes en la pantalla de inicio', 'ok'); refrescarMovil(); });
   $('#addList').addEventListener('click', () => openListSheet(null));
   $('#themeBtn').addEventListener('click', () => { state.settings.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; save(); applyTheme(); });
   $('#notifBtn').addEventListener('click', SRV ? openNovedades : askNotif);
@@ -844,6 +858,8 @@ async function init() {
   });
   setupDnD($('#view'));
   render(); renderQuickChips(); checkReminders();
+  abrirDesdeEnlace();
+  if (SRV) pushComprobar();
   setInterval(checkReminders, 20000);
   setInterval(() => { if (!sheetState) { if (state.view === 'today' || state.view === 'calendar') render(); else renderSidebar(); } }, 60000);
   let last = todayYmd(); setInterval(() => { if (todayYmd() !== last) { last = todayYmd(); state.sel = last; render(); } }, 30000);
@@ -1004,6 +1020,85 @@ async function subirAdjuntos(files, k, v) {
   refrescarAdjuntos(k, v);
 }
 function refrescarAdjuntos(k, v) { $$('[data-adj-box="' + k + ':' + v + '"]').forEach(box => { box.innerHTML = adjHtml(k === 'item' ? { item: v } : { obra: v }); }); }
+
+/* ===== en el móvil: instalar, avisos con la app cerrada (push), enlaces de los avisos ===== */
+let instalarEvento = null;
+function lsGet(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+function lsSet(k, v) { try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) { } }
+const esIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const esMovil = () => esIOS() || /Android|Mobi/i.test(navigator.userAgent);
+const instalada = () => { try { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch (e) { return false; } };
+const pushSoportado = () => !!SRV && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && window.isSecureContext;
+function b64uU8(s) { const p = '='.repeat((4 - s.length % 4) % 4); const b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); const u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
+function u8B64u(buf) { const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i++) s += String.fromCharCode(u[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function pushBoxHtml() {
+  const ayuda = '<p class="hint" style="margin-top:6px">Te llegan aunque Clanedario esté cerrado y con la pantalla bloqueada, con el sonido de notificaciones del teléfono. Con el móvil apagado del todo, en silencio o en No molestar no suenan. Pueden llegar hasta 5 minutos antes de la hora que pusiste.</p>';
+  if (!pushSoportado()) {
+    if (esIOS() && !instalada()) return '<p class="hint">En iPhone, primero añade Clanedario a la pantalla de inicio (botón Compartir de Safari &gt; «Añadir a pantalla de inicio») y ábrelo desde ese icono. Después vuelve aquí y activa los avisos.</p>' + ayuda;
+    return '<p class="hint">Este navegador no admite avisos con la app cerrada. En el móvil usa Chrome (Android) o Safari con la app en la pantalla de inicio (iPhone).</p>';
+  }
+  if (Notification.permission === 'denied') return '<p class="hint">Las notificaciones de Clanedario están bloqueadas en este dispositivo. Permítelas en los ajustes del teléfono o del navegador (Notificaciones &gt; Clanedario) y vuelve aquí.</p>' + ayuda;
+  if (state.pushSub) return '<div class="push-ok"><b>Activados en este dispositivo</b><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm primary" data-act="push-probar">Probar aviso</button><button class="btn sm" data-act="push-desactivar">Desactivar</button></div></div>' + ayuda;
+  return '<button class="btn primary" data-act="push-activar">Activar avisos en este dispositivo</button>' + ayuda;
+}
+function instalarHtml() {
+  if (instalada()) return '<p class="hint"><b>Instalada.</b> Clanedario ya está en la pantalla de inicio de este dispositivo. Mantén pulsado el icono para ir directo a Hoy, Nueva tarea o Calendario.</p>';
+  if (instalarEvento) return '<button class="btn primary" data-act="instalar">Instalar Clanedario en este dispositivo</button><p class="hint" style="margin-top:6px">Queda como una app más, con su icono y el número de pendientes de hoy.</p>';
+  if (esIOS()) return '<p class="hint">En iPhone: abre esta página en Safari, pulsa el botón Compartir y elige «Añadir a pantalla de inicio». Ábrela siempre desde ese icono.</p>';
+  return '<p class="hint">En Android: menú de Chrome (los tres puntos) &gt; «Instalar aplicación» o «Añadir a pantalla de inicio». En el ordenador: el botón de instalar de la barra de direcciones.</p>';
+}
+/* banda en «Hoy»: primero instalar (en el móvil), después activar los avisos; se puede ocultar por hoy */
+function movilAvisoHtml() {
+  if (!SRV || lsGet('clanedario.movil.oculto') === todayYmd()) return '';
+  if (esMovil() && !instalada()) return '<div class="aviso-movil"><div><b>Pon Clanedario en la pantalla de inicio</b><span>Así se abre como una app y te pueden llegar los avisos con la pantalla bloqueada.</span></div>' + (instalarEvento ? '<button class="btn sm primary" data-act="instalar">Instalar</button>' : '<button class="btn sm primary" data-act="settings-abrir">Cómo se hace</button>') + '<button class="btn sm ghost" data-act="movil-ocultar">Ahora no</button></div>';
+  if (pushSoportado() && state.pushSub === '' && Notification.permission !== 'denied') return '<div class="aviso-movil"><div><b>Activa los avisos en este dispositivo</b><span>Te avisará de tus reuniones y tareas aunque Clanedario esté cerrado.</span></div><button class="btn sm primary" data-act="push-activar">Activar avisos</button><button class="btn sm ghost" data-act="movil-ocultar">Ahora no</button></div>';
+  return '';
+}
+function refrescarMovil() { const pb = $('#pushBox'); if (pb) pb.innerHTML = pushBoxHtml(); const ib = $('#instBox'); if (ib) ib.innerHTML = instalarHtml(); if (state.view === 'today' && !sheetState) render(); }
+/* al abrir: comprueba si este dispositivo ya está suscrito y lo vuelve a dar de alta (por si el navegador cambió la dirección) */
+async function pushComprobar() {
+  if (!pushSoportado()) return;
+  try {
+    const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription();
+    state.pushSub = sub && Notification.permission === 'granted' ? sub.endpoint : '';
+    if (state.pushSub) srvFetch('push-alta', { sub: sub.toJSON(), ua: navigator.userAgent }).catch(() => { });
+  } catch (e) { state.pushSub = ''; }
+  refrescarMovil();
+}
+async function pushActivar() {
+  if (!pushSoportado()) { openSettings(); return; }
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { toast('Avisos sin activar', 'Hay que permitir las notificaciones de Clanedario en este dispositivo', 'info', 5000); refrescarMovil(); return; }
+    const reg = await navigator.serviceWorker.ready;
+    const clave = (await srvFetch('push-clave')).clave;
+    let sub = await reg.pushManager.getSubscription();
+    if (sub && sub.options && sub.options.applicationServerKey && u8B64u(sub.options.applicationServerKey) !== clave) { await sub.unsubscribe(); sub = null; }
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uU8(clave) });
+    const r = await srvFetch('push-alta', { sub: sub.toJSON(), ua: navigator.userAgent });
+    state.pushSub = sub.endpoint;
+    toast('Avisos activados', 'En este dispositivo' + (r.dispositivos > 1 ? ' (tienes ' + r.dispositivos + ' con avisos)' : '') + '. Pulsa «Probar aviso» para comprobarlo', 'ok', 5000);
+  } catch (e) { toast('No se han podido activar los avisos', String((e && e.message) || e), 'info', 7000); }
+  refrescarMovil();
+}
+async function pushProbar() {
+  try { const r = await srvFetch('push-prueba', {}); if (r.ok) toast('Aviso de prueba enviado', 'Llega en unos segundos. Prueba también con la app cerrada y la pantalla bloqueada', 'ok', 6000); else toast('No ha salido el aviso de prueba', (r.resultados && r.resultados[0] && (r.resultados[0].error || ('código ' + r.resultados[0].code))) || r.error || '', 'info', 8000); }
+  catch (e) { srvFallo(e); }
+}
+async function pushDesactivar() {
+  try { const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription(); if (sub) { await srvFetch('push-baja', { endpoint: sub.endpoint }).catch(() => { }); await sub.unsubscribe(); } } catch (e) { }
+  state.pushSub = ''; toast('Avisos desactivados en este dispositivo', 'Los demás dispositivos siguen recibiéndolos', 'info', 4000); refrescarMovil();
+}
+/* enlaces que abren la app en un sitio: los avisos (?abrir=id&dia=), los accesos rápidos del icono (?vista=, ?nuevo=1) */
+function abrirDesdeEnlace() {
+  let q; try { q = new URLSearchParams(location.search); } catch (e) { return; }
+  const abrir = q.get('abrir'), vista = q.get('vista'), nuevo = q.get('nuevo');
+  if (!abrir && !vista && !nuevo) return;
+  try { history.replaceState(null, '', location.pathname); } catch (e) { }
+  if (vista && ['today', 'upcoming', 'calendar', 'all'].concat(SRV ? ['equipo', 'semana', 'panel', 'obras', 'tablero', 'captacion'] : []).includes(vista)) go(vista);
+  if (nuevo) openItem(null, null, { date: todayYmd() });
+  if (abrir) { if (byId(abrir)) openItem(abrir, q.get('dia') || null); else toast('Ese aviso ya no está', 'Puede que la tarea se haya borrado o movido', 'info'); }
+}
 
 /* ===== modo empresa: sincronización con proyecton.es (api.php) ===== */
 const API = 'api.php';

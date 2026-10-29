@@ -643,6 +643,15 @@ label.btn input{display:none}
 :root[data-density="comoda"] .card-head{min-height:56px}
 :root[data-density="comoda"] .cal-cell{min-height:124px}
 
+/* ---------- 16b. En el móvil: instalar y avisos con la app cerrada ---------- */
+.aviso-movil{display:flex;align-items:center;gap:8px;padding:10px 12px 10px 14px;margin-bottom:14px;background:var(--accent-soft);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:var(--r);min-width:0}
+.aviso-movil > div{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.aviso-movil b{font-size:13.5px;font-weight:700;color:var(--text)}
+.aviso-movil span{font-size:12.5px;color:var(--muted);line-height:1.4}
+.aviso-movil .btn{flex:none}
+.push-ok{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:9px 12px;background:var(--ok-soft);border:1px solid var(--line);border-radius:var(--r-sm)}
+.push-ok b{font-size:13px;color:var(--ok)}
+
 /* ---------- 17. Pantallas medianas y móvil ---------- */
 @media (max-width:1320px){.grid3{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.grid3 .c3{grid-column:1/-1}}
 @media (max-width:1120px){
@@ -677,6 +686,8 @@ label.btn input{display:none}
   .kcard .kt b{font-size:19px}
   .focus{gap:10px;padding:10px 10px 10px 12px;flex-wrap:wrap}
   .focus .f-body{flex-basis:calc(100% - 90px)}
+  .aviso-movil{flex-wrap:wrap}
+  .aviso-movil > div{flex-basis:100%}
   .tablero{grid-template-columns:minmax(0,1fr)}
   .row .del{opacity:1}
   .cal-head h1{font-size:18px;min-width:0;flex:1}
